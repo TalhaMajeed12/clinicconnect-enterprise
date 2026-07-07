@@ -45,21 +45,47 @@ def create_app(config_name='default'):
     mail.init_app(app)
     migrate.init_app(app, db)
     
-    # Redis session
+    # Redis session - with better error handling
     if app.config.get('REDIS_URL'):
         try:
             app.config['SESSION_REDIS'] = redis.from_url(
                 app.config['REDIS_URL'],
-                password=app.config.get('REDIS_PASSWORD')
+                password=app.config.get('REDIS_PASSWORD'),
+                socket_timeout=5,
+                socket_connect_timeout=5,
+                retry_on_timeout=True
             )
-        except:
-            pass
+            # Test connection
+            app.config['SESSION_REDIS'].ping()
+            print("✅ Redis connected successfully!")
+        except Exception as e:
+            print(f"⚠️ Redis connection failed: {e}")
+            print("⚠️ Falling back to filesystem sessions")
+            app.config['SESSION_TYPE'] = 'filesystem'
+            app.config['SESSION_REDIS'] = None
+    else:
+        app.config['SESSION_TYPE'] = 'filesystem'
+    
     session_manager.init_app(app)
     CORS(app)
     
-    # Rate Limiting
+    # Rate Limiting - use memory if Redis not available
     if app.config.get('RATELIMIT_ENABLED', False):
+        if not app.config.get('SESSION_REDIS'):
+            app.config['RATELIMIT_STORAGE_URL'] = 'memory://'
         limiter.init_app(app)
+    
+    # ============================================
+    # ADD TRANSLATION FUNCTION TO JINJA2 TEMPLATES
+    # ============================================
+    from app.utils.translations import t
+    app.jinja_env.globals.update(t=t)
+    
+    # Also add as context processor for templates
+    @app.context_processor
+    def inject_translations():
+        from app.utils.translations import t
+        return dict(t=t)
     
     # Setup logging
     setup_logging(app)
