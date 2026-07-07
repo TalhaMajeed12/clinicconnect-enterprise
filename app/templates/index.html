@@ -1,43 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}{{ t('welcome') }}{% endblock %}
-
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-10 text-center">
         <h1 class="display-4">
             <i class="fas fa-heartbeat text-primary"></i> ClinicConnect
         </h1>
-        <p class="lead">{{ t('welcome_to_clinicconnect') }}</p>
+        <p class="lead">Smart Electronic Health Record System</p>
         <hr class="my-4">
-        <p>{{ t('secure_healthcare_management') }}</p>
+        <p>Secure healthcare management with AI assistance.</p>
         
         <div class="row mt-5">
             <div class="col-md-4">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5><i class="fas fa-user"></i> {{ t('patient') }}</h5>
-                        <p>{{ t('patient_description') }}</p>
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">{{ t('login') }}</a>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary btn-sm">{{ t('register') }}</a>
+                        <h5><i class="fas fa-user"></i> Patient</h5>
+                        <p>Access your medical records and book appointments.</p>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">Login</a>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary btn-sm">Register</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5><i class="fas fa-user-md"></i> {{ t('clinician') }}</h5>
-                        <p>{{ t('clinician_description') }}</p>
-                        <a href="{{ url_for('auth.clinician_login') }}" class="btn btn-success btn-sm">{{ t('login') }}</a>
+                        <h5><i class="fas fa-user-md"></i> Clinician</h5>
+                        <p>Manage patients, visits, and prescriptions.</p>
+                        <a href="{{ url_for('auth.clinician_login') }}" class="btn btn-success btn-sm">Login</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5><i class="fas fa-lock"></i> {{ t('admin') }}</h5>
-                        <p>{{ t('admin_description') }}</p>
-                        <a href="{{ url_for('auth.admin_login') }}" class="btn btn-warning btn-sm">{{ t('login') }}</a>
+                        <h5><i class="fas fa-lock"></i> Admin</h5>
+                        <p>Manage clinicians, patients, and system settings.</p>
+                        <a href="{{ url_for('auth.admin_login') }}" class="btn btn-warning btn-sm">Login</a>
                     </div>
                 </div>
             </div>

@@ -1,1 +1,41 @@
- 
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Welcome, Dr. {{ clinician.user.full_name if clinician.user else '' }}</h2>
+<hr>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Today's Appointments</h5>
+            </div>
+            <div class="card-body">
+                {% if appointments %}
+                    <ul class="list-group">
+                        {% for apt in appointments %}
+                            <li class="list-group-item">
+                                {{ apt.patient.user.full_name if apt.patient else '' }} - 
+                                {{ apt.appointment_date.strftime('%H:%M') }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No appointments today.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('clinician.add_patient') }}" class="btn btn-primary w-100 mb-2">Add Patient</a>
+                <a href="{{ url_for('clinician.patients_list') }}" class="btn btn-info w-100">View Patients</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

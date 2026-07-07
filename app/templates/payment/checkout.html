@@ -1,1 +1,29 @@
- 
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Payment Checkout</h4>
+            </div>
+            <div class="card-body">
+                <p><strong>Appointment:</strong> {{ appointment.appointment_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Doctor:</strong> {{ appointment.clinician.user.full_name if appointment.clinician else '' }}</p>
+                <hr>
+                <p><strong>Total Fee:</strong> PKR {{ total }}</p>
+                <p><strong>Deposit Due:</strong> PKR {{ deposit }}</p>
+                <hr>
+                <form method="POST" action="{{ url_for('payment.process') }}">
+                    <input type="hidden" name="appointment_id" value="{{ appointment.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Card Number</label>
+                        <input type="text" name="card_number" class="form-control" placeholder="4242 4242 4242 4242" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Pay PKR {{ deposit }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

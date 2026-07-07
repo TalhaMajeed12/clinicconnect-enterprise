@@ -1,1 +1,22 @@
- 
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4>Verify OTP</h4>
+            </div>
+            <div class="card-body">
+                <p>Enter the 6-digit code sent to your email/phone.</p>
+                <form method="POST">
+                    <div class="mb-3">
+                        <input type="text" name="otp" class="form-control" placeholder="OTP Code" maxlength="6" required>
+                    </div>
+                    <button type="submit" class="btn btn-info w-100">Verify</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

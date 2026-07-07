@@ -20,6 +20,7 @@
 </head>
 <body dir="{{ 'rtl' if session.get('language') == 'ur' else 'ltr' }}">
     
+    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
@@ -32,18 +33,19 @@
                 <ul class="navbar-nav me-auto">
                     {% if session.get('user_id') %}
                         {% if session.get('role') == 'admin' %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}">{{ t('dashboard') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.patients') }}">{{ t('patients') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.clinicians') }}">{{ t('clinicians') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.audit_logs') }}">{{ t('audit_logs') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.patients') }}">Patients</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.clinicians') }}">Clinicians</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.appointments') }}">Appointments</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.audit_logs') }}">Audit Logs</a></li>
                         {% elif session.get('role') == 'clinician' %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.dashboard') }}">{{ t('dashboard') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.patients_list') }}">{{ t('patients') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.appointments') }}">{{ t('appointments') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.dashboard') }}">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.patients_list') }}">Patients</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.appointments') }}">Appointments</a></li>
                         {% else %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.dashboard') }}">{{ t('dashboard') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.history') }}">{{ t('patient_history') }}</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('appointments.book') }}">{{ t('book_appointment') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.dashboard') }}">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.history') }}">History</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('appointments.book') }}">Book Appointment</a></li>
                         {% endif %}
                     {% endif %}
                 </ul>
@@ -61,16 +63,17 @@
                     </li>
                     
                     {% if session.get('user_id') %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> {{ t('logout') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i> {{ t('login') }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}"><i class="fas fa-user-plus"></i> {{ t('register') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}"><i class="fas fa-user-plus"></i> Register</a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
     
+    <!-- Flash Messages -->
     <div class="container mt-3">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -85,13 +88,15 @@
         {% endwith %}
     </div>
     
+    <!-- Content -->
     <main class="container mt-4">
         {% block content %}{% endblock %}
     </main>
     
+    <!-- Footer -->
     <footer class="footer mt-5 py-3 bg-light">
         <div class="container text-center">
-            <span class="text-muted">&copy; 2026 ClinicConnect. {{ t('All rights reserved.') }}</span>
+            <span class="text-muted">&copy; 2026 ClinicConnect. All rights reserved.</span>
         </div>
     </footer>
     
@@ -100,4 +105,4 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
-</html> 
+</html>

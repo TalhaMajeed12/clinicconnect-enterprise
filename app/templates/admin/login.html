@@ -3,12 +3,12 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h4>Admin Login</h4>
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="fas fa-lock"></i> Admin Login</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('auth.admin_login') }}">
+                <form method="POST">
                     <div class="mb-3">
                         <label class="form-label">Username</label>
                         <input type="text" name="username" class="form-control" required>
@@ -17,10 +17,14 @@
                         <label class="form-label">Password</label>
                         <input type="password" name="password" class="form-control" required>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                    <button type="submit" class="btn btn-warning w-100">Login</button>
                 </form>
+                <p class="mt-3 text-center">
+                    <a href="{{ url_for('auth.login') }}">Patient Login</a> | 
+                    <a href="{{ url_for('auth.clinician_login') }}">Clinician Login</a>
+                </p>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

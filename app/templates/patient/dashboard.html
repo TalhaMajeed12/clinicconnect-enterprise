@@ -1,1 +1,53 @@
- 
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Welcome, {{ patient.user.full_name if patient.user else '' }}</h2>
+<hr>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Upcoming Appointments</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming %}
+                    <ul class="list-group">
+                        {% for apt in upcoming %}
+                            <li class="list-group-item">
+                                Dr. {{ apt.clinician.user.full_name if apt.clinician else '' }} - 
+                                {{ apt.appointment_date.strftime('%Y-%m-%d %H:%M') }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No upcoming appointments.</p>
+                {% endif %}
+                <a href="{{ url_for('appointments.book') }}" class="btn btn-primary mt-2">Book Appointment</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Visits</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_visits %}
+                    <ul class="list-group">
+                        {% for visit in recent_visits %}
+                            <li class="list-group-item">
+                                {{ visit.visit_date.strftime('%Y-%m-%d') }} - 
+                                Dr. {{ visit.clinician.user.full_name if visit.clinician else '' }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No recent visits.</p>
+                {% endif %}
+                <a href="{{ url_for('patient.history') }}" class="btn btn-info mt-2">View History</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
