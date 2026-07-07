@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('language', 'en') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClinicConnect - {% block title %}Healthcare Management{% endblock %}</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% if session.get('language') == 'ur' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}">
+    {% endif %}
+</head>
+<body dir="{{ 'rtl' if session.get('language') == 'ur' else 'ltr' }}">
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="fas fa-heartbeat"></i> ClinicConnect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if session.get('user_id') %}
+                        {% if session.get('role') == 'admin' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}">{{ t('dashboard') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.patients') }}">{{ t('patients') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.clinicians') }}">{{ t('clinicians') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.audit_logs') }}">{{ t('audit_logs') }}</a></li>
+                        {% elif session.get('role') == 'clinician' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.dashboard') }}">{{ t('dashboard') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.patients_list') }}">{{ t('patients') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.appointments') }}">{{ t('appointments') }}</a></li>
+                        {% else %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.dashboard') }}">{{ t('dashboard') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.history') }}">{{ t('patient_history') }}</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('appointments.book') }}">{{ t('book_appointment') }}</a></li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="fas fa-language"></i>
+                            {% if session.get('language') == 'ur' %}اردو{% else %}English{% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.change_language', lang='en') }}">English</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.change_language', lang='ur') }}">اردو</a></li>
+                        </ul>
+                    </li>
+                    
+                    {% if session.get('user_id') %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> {{ t('logout') }}</a></li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i> {{ t('login') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}"><i class="fas fa-user-plus"></i> {{ t('register') }}</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer class="footer mt-5 py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">&copy; 2026 ClinicConnect. {{ t('All rights reserved.') }}</span>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 
