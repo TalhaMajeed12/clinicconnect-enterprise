@@ -66,7 +66,7 @@ def patients():
         return render_template('errors/500.html'), 500
 
 # ============================================
-# CLINICIANS (FIXED - With Debug)
+# CLINICIANS (FIXED)
 # ============================================
 @admin_bp.route('/clinicians')
 def clinicians():
@@ -74,22 +74,12 @@ def clinicians():
         return redirect(url_for('auth.login'))
     
     try:
-        # Debug: Check if table exists
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        tables = inspector.get_table_names()
-        
-        # Check if clinician_profile table exists
-        if 'clinician_profile' not in tables:
-            flash('Clinician table does not exist. Please run database migrations.', 'danger')
-            return render_template('admin/clinicians.html', clinicians=[])
-        
         # Get all clinicians
-        clinicians = ClinicianProfile.query.all()
+        all_clinicians = ClinicianProfile.query.all()
         
-        # Filter out admin
+        # Filter out admin user
         filtered = []
-        for c in clinicians:
+        for c in all_clinicians:
             if c.user and c.user.username != 'admin':
                 filtered.append(c)
         
@@ -120,10 +110,13 @@ def add_clinician():
                 flash('Username already exists', 'danger')
                 return render_template('admin/add_clinician.html')
             
-            user = User(username=username, role='clinician')
-            user.full_name = full_name
-            user.email = request.form.get('email')
-            user.phone = request.form.get('phone')
+            user = User(
+                username=username,
+                role='clinician',
+                full_name=full_name,
+                email=request.form.get('email'),
+                phone=request.form.get('phone')
+            )
             user.set_password(password)
             
             db.session.add(user)

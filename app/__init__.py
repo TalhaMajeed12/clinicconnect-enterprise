@@ -11,6 +11,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from config import config
 import redis
+import traceback
 
 # ============================================
 # SENTRY DISABLED - Commented out for development
@@ -129,6 +130,61 @@ def create_app(config_name='default'):
         if not lang:
             session['language'] = app.config.get('DEFAULT_LANGUAGE', 'en')
     
+    # ============================================
+    # CREATE DATABASE TABLES ON STARTUP
+    # ============================================
+    with app.app_context():
+        try:
+            # Import all models to ensure they're registered
+            from app.models import (
+                User, PatientProfile, ClinicianProfile, 
+                Appointment, Payment, AuditLog, 
+                OtpVerification, LoginAttempt, SystemSetting
+            )
+            
+            # Create all tables
+            db.create_all()
+            app.logger.info("✅ Database tables verified/created successfully")
+            print("✅ Database tables verified/created successfully")
+            
+            # Create admin user if it doesn't exist
+            admin = User.query.filter_by(username='admin').first()
+            if not admin:
+                admin = User(
+                    username='admin',
+                    role='admin',
+                    full_name='System Administrator',
+                    email='admin@clinicconnect.com',
+                    phone='1234567890'
+                )
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.flush()
+                app.logger.info("✅ Admin user created")
+                print("✅ Admin user created")
+                
+                # Create admin clinician profile
+                admin_clinician = ClinicianProfile.query.filter_by(user_id=admin.id).first()
+                if not admin_clinician:
+                    admin_clinician = ClinicianProfile(
+                        user_id=admin.id,
+                        specialty='Administration',
+                        consultation_fee=0
+                    )
+                    db.session.add(admin_clinician)
+                    app.logger.info("✅ Admin clinician profile created")
+                    print("✅ Admin clinician profile created")
+                
+                db.session.commit()
+                app.logger.info("✅ Admin setup complete (username: admin, password: admin123)")
+                print("✅ Admin setup complete (username: admin, password: admin123)")
+            
+        except Exception as e:
+            app.logger.error(f"❌ Database initialization error: {str(e)}")
+            app.logger.error(traceback.format_exc())
+            print(f"❌ Database initialization error: {str(e)}")
+            print(traceback.format_exc())
+    
     return app
 
 def setup_logging(app):
@@ -161,6 +217,7 @@ def register_error_handlers(app):
     def internal_error(error):
         db.session.rollback()
         app.logger.error(f'Server Error: {error}')
+        app.logger.error(traceback.format_exc())
         return render_template('errors/500.html'), 500
     
     @app.errorhandler(403)

@@ -174,8 +174,6 @@ class PatientProfile(db.Model, EncryptionMixin):
     family_history = db.Column(db.JSON, default=[])
     
     guardian = db.relationship('PatientProfile', remote_side=[id], backref='children')
-    visits = db.relationship('Visit', backref='patient', lazy='dynamic')
-    appointments = db.relationship('Appointment', backref='patient', lazy='dynamic')
     
     @property
     def blood_group(self):
@@ -208,7 +206,6 @@ class PatientProfile(db.Model, EncryptionMixin):
             'allergies': self.allergies,
             'is_child': self.is_child,
             'age': self.age,
-            'guardian_name': self.guardian.user.full_name if self.guardian else None
         }
 
 
@@ -238,9 +235,6 @@ class ClinicianProfile(db.Model):
     
     average_rating = db.Column(db.Float, default=0)
     total_reviews = db.Column(db.Integer, default=0)
-    
-    appointments = db.relationship('Appointment', backref='clinician', lazy='dynamic')
-    attendance = db.relationship('Attendance', backref='clinician', uselist=False)
     
     def to_dict(self):
         return {
@@ -282,93 +276,13 @@ class Appointment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    payments = db.relationship('Payment', backref='appointment', lazy='dynamic')
-    
     def to_dict(self):
         return {
             'id': self.id,
-            'patient': self.patient.user.full_name if self.patient else None,
-            'clinician': self.clinician.user.full_name if self.clinician else None,
             'appointment_date': self.appointment_date.isoformat(),
             'status': self.status,
             'reason': self.reason
         }
-
-
-# ============================================
-# VISIT
-# ============================================
-class Visit(db.Model):
-    __tablename__ = 'visits'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profiles.id'))
-    clinician_id = db.Column(db.Integer, db.ForeignKey('clinician_profiles.id'))
-    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'))
-    
-    visit_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    visit_type = db.Column(db.String(50))
-    
-    chief_complaint = db.Column(db.Text)
-    history_of_presenting_illness = db.Column(db.Text)
-    past_medical_history = db.Column(db.Text)
-    family_history = db.Column(db.Text)
-    
-    physical_examination = db.Column(db.Text)
-    
-    height = db.Column(db.Float)
-    weight = db.Column(db.Float)
-    bmi = db.Column(db.Float)
-    blood_pressure_systolic = db.Column(db.Integer)
-    blood_pressure_diastolic = db.Column(db.Integer)
-    heart_rate = db.Column(db.Integer)
-    temperature = db.Column(db.Float)
-    oxygen_saturation = db.Column(db.Float)
-    
-    primary_diagnosis = db.Column(db.Text)
-    secondary_diagnosis = db.Column(db.JSON, default=[])
-    
-    treatment_plan = db.Column(db.Text)
-    medications_prescribed = db.Column(db.JSON, default=[])
-    referrals = db.Column(db.JSON, default=[])
-    
-    follow_up_required = db.Column(db.Boolean, default=False)
-    follow_up_date = db.Column(db.DateTime)
-    
-    attachments = db.Column(db.JSON, default=[])
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    prescriptions = db.relationship('Prescription', backref='visit', lazy='dynamic')
-
-
-# ============================================
-# PRESCRIPTION
-# ============================================
-class Prescription(db.Model):
-    __tablename__ = 'prescriptions'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'))
-    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profiles.id'))
-    
-    drug_name = db.Column(db.String(100), nullable=False)
-    generic_name = db.Column(db.String(100))
-    strength = db.Column(db.String(50))
-    dosage = db.Column(db.String(50))
-    frequency = db.Column(db.String(100))
-    duration = db.Column(db.String(50))
-    quantity = db.Column(db.Integer)
-    refills = db.Column(db.Integer)
-    
-    instructions = db.Column(db.Text)
-    special_instructions = db.Column(db.Text)
-    
-    is_active = db.Column(db.Boolean, default=True)
-    is_dispensed = db.Column(db.Boolean, default=False)
-    dispensed_date = db.Column(db.DateTime)
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 # ============================================
@@ -401,13 +315,33 @@ class Payment(db.Model):
 
 
 # ============================================
-# OTP VERIFICATION - ADDED THIS MODEL
+# AUDIT LOG
+# ============================================
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    action = db.Column(db.String(100), nullable=False)
+    resource_type = db.Column(db.String(50))
+    resource_id = db.Column(db.Integer)
+    details = db.Column(db.JSON)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(255))
+    session_id = db.Column(db.String(100))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    user = db.relationship('User', backref='audit_logs')
+
+
+# ============================================
+# OTP VERIFICATION
 # ============================================
 class OtpVerification(db.Model):
     __tablename__ = 'otp_verifications'
     
     id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     phone = db.Column(db.String(15), nullable=False)
     otp_code = db.Column(db.String(6), nullable=False)
     purpose = db.Column(db.String(20), default='registration')
@@ -429,59 +363,6 @@ class LoginAttempt(db.Model):
     user_agent = db.Column(db.String(200))
     success = db.Column(db.Boolean, default=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-
-
-# ============================================
-# AUDIT LOG
-# ============================================
-class AuditLog(db.Model):
-    __tablename__ = 'audit_logs'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    action = db.Column(db.String(100), nullable=False)
-    resource_type = db.Column(db.String(50))
-    resource_id = db.Column(db.Integer)
-    details = db.Column(db.JSON)
-    ip_address = db.Column(db.String(45))
-    user_agent = db.Column(db.String(255))
-    session_id = db.Column(db.String(100))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-
-
-# ============================================
-# ATTENDANCE
-# ============================================
-class Attendance(db.Model):
-    __tablename__ = 'attendance'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    clinician_id = db.Column(db.Integer, db.ForeignKey('clinician_profiles.id'), unique=True)
-    status = db.Column(db.String(20), default='offline')
-    check_in_time = db.Column(db.DateTime)
-    check_out_time = db.Column(db.DateTime)
-    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-
-# ============================================
-# NOTIFICATION
-# ============================================
-class Notification(db.Model):
-    __tablename__ = 'notifications'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    type = db.Column(db.String(50))
-    
-    title = db.Column(db.String(255))
-    message = db.Column(db.Text)
-    link = db.Column(db.String(255))
-    
-    is_read = db.Column(db.Boolean, default=False)
-    sent_at = db.Column(db.DateTime)
-    read_at = db.Column(db.DateTime)
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 # ============================================
