@@ -5,6 +5,15 @@
     <h2><i class="fas fa-user-md"></i> Clinicians</h2>
     <hr>
     
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
     <div class="card">
         <div class="card-body">
             <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary mb-3">
@@ -26,26 +35,28 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for clinician in clinicians %}
-                        <tr>
-                            <td>{{ clinician.id }}</td>
-                            <td>{{ clinician.user.full_name if clinician.user else 'Unknown' }}</td>
-                            <td>{{ clinician.specialty }}</td>
-                            <td>{{ clinician.license_number or 'N/A' }}</td>
-                            <td>{{ clinician.years_experience }} years</td>
-                            <td>PKR {{ clinician.consultation_fee }}</td>
-                            <td>PKR {{ (clinician.consultation_fee * 0.25)|int }}</td>
-                            <td>
-                                <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">View</a>
-                                <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning">Edit</a>
-                                <button class="btn btn-sm btn-danger delete-clinician" data-id="{{ clinician.id }}">Delete</button>
-                            </td>
-                        </tr>
+                        {% if clinicians %}
+                            {% for clinician in clinicians %}
+                            <tr>
+                                <td>{{ clinician.id }}</td>
+                                <td>{{ clinician.user.full_name if clinician.user else 'Unknown' }}</td>
+                                <td>{{ clinician.specialty }}</td>
+                                <td>{{ clinician.license_number or 'N/A' }}</td>
+                                <td>{{ clinician.years_experience }} years</td>
+                                <td>PKR {{ clinician.consultation_fee }}</td>
+                                <td>PKR {{ (clinician.consultation_fee * 0.25)|int }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">View</a>
+                                    <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                                    <button class="btn btn-sm btn-danger delete-clinician" data-id="{{ clinician.id }}">Delete</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
                         {% else %}
-                        <tr>
-                            <td colspan="8" class="text-center text-muted">No clinicians found</td>
-                        </tr>
-                        {% endfor %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">No clinicians found</td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -65,7 +76,8 @@ document.querySelectorAll('.delete-clinician').forEach(btn => {
             .then(data => {
                 if (data.success) location.reload();
                 else alert('Error: ' + data.error);
-            });
+            })
+            .catch(err => alert('Error deleting clinician'));
         }
     });
 });

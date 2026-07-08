@@ -66,7 +66,7 @@ def patients():
         return render_template('errors/500.html'), 500
 
 # ============================================
-# CLINICIANS (SIMPLIFIED - NO COMPLEX QUERIES)
+# CLINICIANS (FIXED - With Debug)
 # ============================================
 @admin_bp.route('/clinicians')
 def clinicians():
@@ -74,10 +74,20 @@ def clinicians():
         return redirect(url_for('auth.login'))
     
     try:
-        # Simple query - get all clinicians
+        # Debug: Check if table exists
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        
+        # Check if clinician_profile table exists
+        if 'clinician_profile' not in tables:
+            flash('Clinician table does not exist. Please run database migrations.', 'danger')
+            return render_template('admin/clinicians.html', clinicians=[])
+        
+        # Get all clinicians
         clinicians = ClinicianProfile.query.all()
         
-        # Filter out admin in Python (safer)
+        # Filter out admin
         filtered = []
         for c in clinicians:
             if c.user and c.user.username != 'admin':
@@ -87,8 +97,8 @@ def clinicians():
     except Exception as e:
         print(f"Clinicians Error: {str(e)}")
         print(traceback.format_exc())
-        flash('Error loading clinicians', 'danger')
-        return render_template('errors/500.html'), 500
+        flash(f'Error loading clinicians: {str(e)}', 'danger')
+        return render_template('admin/clinicians.html', clinicians=[])
 
 # ============================================
 # ADD CLINICIAN
