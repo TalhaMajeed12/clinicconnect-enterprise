@@ -36,8 +36,7 @@
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.patients') }}">Patients</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.clinicians') }}">Clinicians</a></li>
-                            <!-- FIXED: Changed admin.appointments to patient.appointments -->
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.appointments') }}">Appointments</a></li>
+                            <!-- REMOVED: Appointments link (no admin.appointments route exists) -->
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.audit_logs') }}">Audit Logs</a></li>
                         {% elif session.get('role') == 'clinician' %}
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.dashboard') }}">Dashboard</a></li>
