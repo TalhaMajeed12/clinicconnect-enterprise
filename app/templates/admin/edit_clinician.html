@@ -57,14 +57,14 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Consultation Fee (PKR)</label>
-                            <input type="number" class="form-control" name="consultation_fee" id="fee" value="{{ clinician.consultation_fee }}" required>
+                            <input type="number" step="0.01" class="form-control" name="consultation_fee" id="fee" value="{{ clinician.consultation_fee|float }}" required>
                             <small class="text-muted">Pre-payment = 25% of fee (4:1 ratio)</small>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Pre-payment Amount</label>
-                            <input type="text" class="form-control" id="prepayment" value="PKR {{ (clinician.consultation_fee * 0.25)|int }}" disabled>
+                            <input type="text" class="form-control" id="prepayment" value="PKR {{ (clinician.consultation_fee|float * 0.25)|int }}" disabled>
                             <small class="text-muted">25% of consultation fee</small>
                         </div>
                     </div>

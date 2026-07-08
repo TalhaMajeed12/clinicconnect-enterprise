@@ -43,8 +43,8 @@
                                 <td>{{ clinician.specialty }}</td>
                                 <td>{{ clinician.license_number or 'N/A' }}</td>
                                 <td>{{ clinician.years_experience }} years</td>
-                                <td>PKR {{ clinician.consultation_fee }}</td>
-                                <td>PKR {{ (clinician.consultation_fee * 0.25)|int }}</td>
+                                <td>PKR {{ clinician.consultation_fee|float }}</td>
+                                <td>PKR {{ (clinician.consultation_fee|float * 0.25)|int }}</td>
                                 <td>
                                     <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">View</a>
                                     <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning">Edit</a>
