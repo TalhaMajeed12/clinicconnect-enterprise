@@ -286,6 +286,94 @@ class Appointment(db.Model):
 
 
 # ============================================
+# VISIT
+# ============================================
+class Visit(db.Model):
+    __tablename__ = 'visits'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profiles.id'))
+    clinician_id = db.Column(db.Integer, db.ForeignKey('clinician_profiles.id'))
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=True)
+    
+    visit_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    visit_type = db.Column(db.String(50))
+    
+    chief_complaint = db.Column(db.Text)
+    history_of_presenting_illness = db.Column(db.Text)
+    past_medical_history = db.Column(db.Text)
+    family_history = db.Column(db.Text)
+    
+    physical_examination = db.Column(db.Text)
+    
+    height = db.Column(db.Float)
+    weight = db.Column(db.Float)
+    bmi = db.Column(db.Float)
+    blood_pressure_systolic = db.Column(db.Integer)
+    blood_pressure_diastolic = db.Column(db.Integer)
+    heart_rate = db.Column(db.Integer)
+    temperature = db.Column(db.Float)
+    oxygen_saturation = db.Column(db.Float)
+    
+    primary_diagnosis = db.Column(db.Text)
+    secondary_diagnosis = db.Column(db.JSON, default=[])
+    
+    treatment_plan = db.Column(db.Text)
+    medications_prescribed = db.Column(db.JSON, default=[])
+    referrals = db.Column(db.JSON, default=[])
+    
+    follow_up_required = db.Column(db.Boolean, default=False)
+    follow_up_date = db.Column(db.DateTime)
+    
+    attachments = db.Column(db.JSON, default=[])
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# ============================================
+# PRESCRIPTION
+# ============================================
+class Prescription(db.Model):
+    __tablename__ = 'prescriptions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'))
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profiles.id'))
+    
+    drug_name = db.Column(db.String(100), nullable=False)
+    generic_name = db.Column(db.String(100))
+    strength = db.Column(db.String(50))
+    dosage = db.Column(db.String(50))
+    frequency = db.Column(db.String(100))
+    duration = db.Column(db.String(50))
+    quantity = db.Column(db.Integer)
+    refills = db.Column(db.Integer)
+    
+    instructions = db.Column(db.Text)
+    special_instructions = db.Column(db.Text)
+    
+    is_active = db.Column(db.Boolean, default=True)
+    is_dispensed = db.Column(db.Boolean, default=False)
+    dispensed_date = db.Column(db.DateTime)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# ============================================
+# ATTENDANCE
+# ============================================
+class Attendance(db.Model):
+    __tablename__ = 'attendance'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    clinician_id = db.Column(db.Integer, db.ForeignKey('clinician_profiles.id'), unique=True)
+    status = db.Column(db.String(20), default='offline')
+    check_in_time = db.Column(db.DateTime)
+    check_out_time = db.Column(db.DateTime)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# ============================================
 # PAYMENT
 # ============================================
 class Payment(db.Model):
@@ -378,3 +466,24 @@ class SystemSetting(db.Model):
     category = db.Column(db.String(50))
     is_encrypted = db.Column(db.Boolean, default=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# ============================================
+# NOTIFICATION
+# ============================================
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    type = db.Column(db.String(50))
+    
+    title = db.Column(db.String(255))
+    message = db.Column(db.Text)
+    link = db.Column(db.String(255))
+    
+    is_read = db.Column(db.Boolean, default=False)
+    sent_at = db.Column(db.DateTime)
+    read_at = db.Column(db.DateTime)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
