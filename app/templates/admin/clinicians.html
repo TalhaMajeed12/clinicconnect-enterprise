@@ -29,7 +29,7 @@
                         {% for clinician in clinicians %}
                         <tr>
                             <td>{{ clinician.id }}</td>
-                            <td>{{ clinician.user.full_name }}</td>
+                            <td>{{ clinician.user.full_name if clinician.user else 'Unknown' }}</td>
                             <td>{{ clinician.specialty }}</td>
                             <td>{{ clinician.license_number or 'N/A' }}</td>
                             <td>{{ clinician.years_experience }} years</td>
@@ -37,7 +37,7 @@
                             <td>PKR {{ (clinician.consultation_fee * 0.25)|int }}</td>
                             <td>
                                 <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">View</a>
-                                <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning">Edit Fee</a>
+                                <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning">Edit</a>
                                 <button class="btn btn-sm btn-danger delete-clinician" data-id="{{ clinician.id }}">Delete</button>
                             </td>
                         </tr>
@@ -56,7 +56,7 @@
 <script>
 document.querySelectorAll('.delete-clinician').forEach(button => {
     button.addEventListener('click', function() {
-        if (confirm('Are you sure you want to delete this clinician?')) {
+        if (confirm('Are you sure you want to delete this clinician? This will also delete their user account.')) {
             const id = this.dataset.id;
             fetch(`/admin/clinician/${id}/delete`, {
                 method: 'POST',

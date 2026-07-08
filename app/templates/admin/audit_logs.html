@@ -21,7 +21,7 @@
                     <tbody>
                         {% for log in logs.items %}
                         <tr>
-                            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'N/A' }}</td>
                             <td>{{ log.user.full_name if log.user else 'System' }}</td>
                             <td>{{ log.action }}</td>
                             <td>{{ log.details or 'N/A' }}</td>
@@ -63,4 +63,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

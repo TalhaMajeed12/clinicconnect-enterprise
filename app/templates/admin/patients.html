@@ -31,9 +31,9 @@
                         {% for patient in patients %}
                         <tr>
                             <td>{{ patient.id }}</td>
-                            <td>{{ patient.user.full_name }}</td>
-                            <td>{{ patient.user.email }}</td>
-                            <td>{{ patient.user.phone }}</td>
+                            <td>{{ patient.user.full_name if patient.user else 'Unknown' }}</td>
+                            <td>{{ patient.user.email if patient.user else 'N/A' }}</td>
+                            <td>{{ patient.user.phone if patient.user else 'N/A' }}</td>
                             <td>{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else 'N/A' }}</td>
                             <td>{{ patient.gender or 'N/A' }}</td>
                             <td>
@@ -51,4 +51,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

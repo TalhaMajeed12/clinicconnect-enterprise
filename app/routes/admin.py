@@ -9,6 +9,7 @@ import traceback
 admin_bp = Blueprint('admin', __name__)
 
 def is_admin():
+    """Check if current user is admin"""
     user_id = session.get('user_id')
     if user_id:
         user = User.query.get(user_id)
@@ -56,7 +57,7 @@ def dashboard():
     
     try:
         total_patients = PatientProfile.query.count()
-        total_clinicians = ClinicianProfile.query.filter(User.role == 'clinician').count()
+        total_clinicians = ClinicianProfile.query.count()
         total_appointments = Appointment.query.count()
         total_revenue = db.session.query(func.sum(Payment.amount)).filter_by(payment_status='completed').scalar() or 0
         
@@ -117,7 +118,7 @@ def patients():
         return render_template('errors/500.html'), 500
 
 # ============================================
-# CLINICIANS LIST (Fixed - Excludes Admin)
+# CLINICIANS LIST (FIXED - Simple query)
 # ============================================
 @admin_bp.route('/clinicians')
 def clinicians():
@@ -125,11 +126,19 @@ def clinicians():
         return redirect(url_for('auth.login'))
     
     try:
-        # Only get users with role 'clinician', exclude admin
-        clinicians = ClinicianProfile.query.join(User).filter(User.role == 'clinician', User.username != 'admin').all()
+        # Get all clinicians and filter out admin in Python
+        all_clinicians = ClinicianProfile.query.all()
+        
+        # Filter out the admin user (username 'admin')
+        clinicians = []
+        for c in all_clinicians:
+            if c.user and c.user.username != 'admin':
+                clinicians.append(c)
+        
         return render_template('admin/clinicians.html', clinicians=clinicians)
     except Exception as e:
         print(f"❌ Clinicians Error: {str(e)}")
+        print(traceback.format_exc())
         flash(f'Error loading clinicians: {str(e)}', 'danger')
         return render_template('errors/500.html'), 500
 
@@ -149,10 +158,13 @@ def add_clinician():
             specialty = request.form.get('specialty')
             consultation_fee = float(request.form.get('consultation_fee', 2000))
             
-            if User.query.filter_by(username=username).first():
-                flash(t('Username already exists'), 'danger')
+            # Check if username exists
+            existing_user = User.query.filter_by(username=username).first()
+            if existing_user:
+                flash('Username already exists', 'danger')
                 return render_template('admin/add_clinician.html')
             
+            # Create user
             user = User(username=username, role='clinician')
             user.full_name = full_name
             user.email = request.form.get('email')
@@ -162,6 +174,7 @@ def add_clinician():
             db.session.add(user)
             db.session.flush()
             
+            # Create clinician profile
             clinician = ClinicianProfile(
                 user_id=user.id,
                 specialty=specialty,
@@ -172,18 +185,19 @@ def add_clinician():
             db.session.add(clinician)
             db.session.commit()
             
-            flash(t('Clinician added successfully!'), 'success')
+            flash('Clinician added successfully!', 'success')
             return redirect(url_for('admin.clinicians'))
         
         return render_template('admin/add_clinician.html')
     except Exception as e:
         print(f"❌ Add Clinician Error: {str(e)}")
+        print(traceback.format_exc())
         db.session.rollback()
         flash(f'Error adding clinician: {str(e)}', 'danger')
         return render_template('admin/add_clinician.html')
 
 # ============================================
-# EDIT CLINICIAN (New - For Adjusting Fees)
+# EDIT CLINICIAN
 # ============================================
 @admin_bp.route('/clinician/<int:clinician_id>/edit', methods=['GET', 'POST'])
 def edit_clinician(clinician_id):
@@ -194,7 +208,7 @@ def edit_clinician(clinician_id):
         clinician = ClinicianProfile.query.get_or_404(clinician_id)
         
         # Prevent editing admin
-        if clinician.user.username == 'admin':
+        if clinician.user and clinician.user.username == 'admin':
             flash('Cannot edit admin user', 'danger')
             return redirect(url_for('admin.clinicians'))
         
@@ -205,9 +219,10 @@ def edit_clinician(clinician_id):
             clinician.consultation_fee = float(request.form.get('consultation_fee', 2000))
             
             # Also update user info
-            clinician.user.full_name = request.form.get('full_name')
-            clinician.user.email = request.form.get('email')
-            clinician.user.phone = request.form.get('phone')
+            if clinician.user:
+                clinician.user.full_name = request.form.get('full_name')
+                clinician.user.email = request.form.get('email')
+                clinician.user.phone = request.form.get('phone')
             
             db.session.commit()
             flash('Clinician updated successfully!', 'success')
@@ -216,6 +231,7 @@ def edit_clinician(clinician_id):
         return render_template('admin/edit_clinician.html', clinician=clinician)
     except Exception as e:
         print(f"❌ Edit Clinician Error: {str(e)}")
+        print(traceback.format_exc())
         db.session.rollback()
         flash(f'Error updating clinician: {str(e)}', 'danger')
         return render_template('admin/edit_clinician.html', clinician=clinician)
@@ -230,10 +246,13 @@ def delete_clinician(clinician_id):
     
     try:
         clinician = ClinicianProfile.query.get_or_404(clinician_id)
-        if clinician.user.username == 'admin':
+        if clinician.user and clinician.user.username == 'admin':
             return jsonify({'error': 'Cannot delete admin'}), 400
         
-        db.session.delete(clinician.user)
+        # Delete user and clinician profile
+        user = clinician.user
+        if user:
+            db.session.delete(user)
         db.session.delete(clinician)
         db.session.commit()
         return jsonify({'success': True})
