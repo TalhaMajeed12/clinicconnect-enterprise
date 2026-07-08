@@ -56,7 +56,7 @@ def dashboard():
     
     try:
         total_patients = PatientProfile.query.count()
-        total_clinicians = ClinicianProfile.query.count()
+        total_clinicians = ClinicianProfile.query.filter(User.role == 'clinician').count()
         total_appointments = Appointment.query.count()
         total_revenue = db.session.query(func.sum(Payment.amount)).filter_by(payment_status='completed').scalar() or 0
         
@@ -117,7 +117,7 @@ def patients():
         return render_template('errors/500.html'), 500
 
 # ============================================
-# CLINICIANS LIST
+# CLINICIANS LIST (Fixed - Excludes Admin)
 # ============================================
 @admin_bp.route('/clinicians')
 def clinicians():
@@ -125,7 +125,8 @@ def clinicians():
         return redirect(url_for('auth.login'))
     
     try:
-        clinicians = ClinicianProfile.query.all()
+        # Only get users with role 'clinician', exclude admin
+        clinicians = ClinicianProfile.query.join(User).filter(User.role == 'clinician', User.username != 'admin').all()
         return render_template('admin/clinicians.html', clinicians=clinicians)
     except Exception as e:
         print(f"❌ Clinicians Error: {str(e)}")
@@ -146,6 +147,7 @@ def add_clinician():
             password = request.form.get('password')
             full_name = request.form.get('full_name')
             specialty = request.form.get('specialty')
+            consultation_fee = float(request.form.get('consultation_fee', 2000))
             
             if User.query.filter_by(username=username).first():
                 flash(t('Username already exists'), 'danger')
@@ -165,7 +167,7 @@ def add_clinician():
                 specialty=specialty,
                 license_number=request.form.get('license_number'),
                 years_experience=int(request.form.get('years_experience', 0)),
-                consultation_fee=float(request.form.get('consultation_fee', 2000))
+                consultation_fee=consultation_fee
             )
             db.session.add(clinician)
             db.session.commit()
@@ -179,6 +181,44 @@ def add_clinician():
         db.session.rollback()
         flash(f'Error adding clinician: {str(e)}', 'danger')
         return render_template('admin/add_clinician.html')
+
+# ============================================
+# EDIT CLINICIAN (New - For Adjusting Fees)
+# ============================================
+@admin_bp.route('/clinician/<int:clinician_id>/edit', methods=['GET', 'POST'])
+def edit_clinician(clinician_id):
+    if not is_admin():
+        return redirect(url_for('auth.login'))
+    
+    try:
+        clinician = ClinicianProfile.query.get_or_404(clinician_id)
+        
+        # Prevent editing admin
+        if clinician.user.username == 'admin':
+            flash('Cannot edit admin user', 'danger')
+            return redirect(url_for('admin.clinicians'))
+        
+        if request.method == 'POST':
+            clinician.specialty = request.form.get('specialty')
+            clinician.license_number = request.form.get('license_number')
+            clinician.years_experience = int(request.form.get('years_experience', 0))
+            clinician.consultation_fee = float(request.form.get('consultation_fee', 2000))
+            
+            # Also update user info
+            clinician.user.full_name = request.form.get('full_name')
+            clinician.user.email = request.form.get('email')
+            clinician.user.phone = request.form.get('phone')
+            
+            db.session.commit()
+            flash('Clinician updated successfully!', 'success')
+            return redirect(url_for('admin.clinicians'))
+        
+        return render_template('admin/edit_clinician.html', clinician=clinician)
+    except Exception as e:
+        print(f"❌ Edit Clinician Error: {str(e)}")
+        db.session.rollback()
+        flash(f'Error updating clinician: {str(e)}', 'danger')
+        return render_template('admin/edit_clinician.html', clinician=clinician)
 
 # ============================================
 # DELETE CLINICIAN

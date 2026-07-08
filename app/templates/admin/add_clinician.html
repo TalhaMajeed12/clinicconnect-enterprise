@@ -68,9 +68,21 @@
                     </div>
                 </div>
                 
-                <div class="mb-3">
-                    <label for="consultation_fee" class="form-label">Consultation Fee (PKR)</label>
-                    <input type="number" class="form-control" id="consultation_fee" name="consultation_fee" value="2000">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="consultation_fee" class="form-label">Consultation Fee (PKR) *</label>
+                            <input type="number" class="form-control" id="consultation_fee" name="consultation_fee" value="2000" required>
+                            <small class="text-muted">Pre-payment will be 25% of this amount (4:1 ratio)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Pre-payment Amount (Auto-calculated)</label>
+                            <input type="text" class="form-control" id="prepayment_display" value="PKR 500" disabled>
+                            <small class="text-muted">This is 25% of the consultation fee (4:1 ratio)</small>
+                        </div>
+                    </div>
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Add Clinician</button>
@@ -79,4 +91,13 @@
         </div>
     </div>
 </div>
+
+<script>
+// Auto-calculate pre-payment when fee changes
+document.getElementById('consultation_fee').addEventListener('input', function() {
+    const fee = parseFloat(this.value) || 0;
+    const prepayment = fee * 0.25;
+    document.getElementById('prepayment_display').value = 'PKR ' + Math.round(prepayment);
+});
+</script>
 {% endblock %}

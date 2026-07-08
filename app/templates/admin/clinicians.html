@@ -20,7 +20,8 @@
                             <th>Specialty</th>
                             <th>License</th>
                             <th>Experience</th>
-                            <th>Fee</th>
+                            <th>Fee (PKR)</th>
+                            <th>Pre-payment (25%)</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -33,14 +34,16 @@
                             <td>{{ clinician.license_number or 'N/A' }}</td>
                             <td>{{ clinician.years_experience }} years</td>
                             <td>PKR {{ clinician.consultation_fee }}</td>
+                            <td>PKR {{ (clinician.consultation_fee * 0.25)|int }}</td>
                             <td>
                                 <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">View</a>
+                                <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning">Edit Fee</a>
                                 <button class="btn btn-sm btn-danger delete-clinician" data-id="{{ clinician.id }}">Delete</button>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center">No clinicians found</td>
+                            <td colspan="8" class="text-center">No clinicians found</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -76,4 +79,4 @@ document.querySelectorAll('.delete-clinician').forEach(button => {
     });
 });
 </script>
-{% endblock %} 
+{% endblock %}
