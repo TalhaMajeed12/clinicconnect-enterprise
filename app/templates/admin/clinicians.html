@@ -1,1 +1,79 @@
- 
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2><i class="fas fa-user-md"></i> Clinicians</h2>
+    <hr>
+    
+    <div class="card">
+        <div class="card-body">
+            <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary mb-3">
+                <i class="fas fa-plus"></i> Add Clinician
+            </a>
+            
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Specialty</th>
+                            <th>License</th>
+                            <th>Experience</th>
+                            <th>Fee</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for clinician in clinicians %}
+                        <tr>
+                            <td>{{ clinician.id }}</td>
+                            <td>{{ clinician.user.full_name }}</td>
+                            <td>{{ clinician.specialty }}</td>
+                            <td>{{ clinician.license_number or 'N/A' }}</td>
+                            <td>{{ clinician.years_experience }} years</td>
+                            <td>PKR {{ clinician.consultation_fee }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">View</a>
+                                <button class="btn btn-sm btn-danger delete-clinician" data-id="{{ clinician.id }}">Delete</button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">No clinicians found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.delete-clinician').forEach(button => {
+    button.addEventListener('click', function() {
+        if (confirm('Are you sure you want to delete this clinician?')) {
+            const id = this.dataset.id;
+            fetch(`/admin/clinician/${id}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error deleting clinician');
+            });
+        }
+    });
+});
+</script>
+{% endblock %} 

@@ -16,24 +16,21 @@ def is_admin():
     return False
 
 # ============================================
-# TEST ROUTE - Remove after fixing
+# TEST ROUTE
 # ============================================
 @admin_bp.route('/test-db')
 def test_db():
     try:
-        # Check if tables exist
         from sqlalchemy import inspect
         inspector = inspect(db.engine)
         tables = inspector.get_table_names()
         
-        # Check each required table
         required_tables = ['user', 'patient_profile', 'clinician_profile', 'appointment', 'payment', 'audit_log']
         missing_tables = [t for t in required_tables if t not in tables]
         
         if missing_tables:
             return f"❌ Missing tables: {', '.join(missing_tables)}"
         
-        # Try to query each table
         patient_count = PatientProfile.query.count()
         clinician_count = ClinicianProfile.query.count()
         appointment_count = Appointment.query.count()
@@ -44,17 +41,9 @@ def test_db():
         - Clinicians: {clinician_count}
         - Appointments: {appointment_count}
         - Tables exist: {', '.join(tables)}
-        
-        You can now access /dashboard
         """
     except Exception as e:
-        return f"""
-        ❌ Database Error:
-        {str(e)}
-        
-        Traceback:
-        {traceback.format_exc()}
-        """
+        return f"❌ Database Error: {str(e)}\n\n{traceback.format_exc()}"
 
 # ============================================
 # ADMIN DASHBOARD
@@ -96,7 +85,6 @@ def dashboard():
             recent_logs=recent_logs
         )
     except Exception as e:
-        # Log the full error
         print(f"❌ Dashboard Error: {str(e)}")
         print(traceback.format_exc())
         flash(f'Dashboard error: {str(e)}', 'danger')
@@ -228,4 +216,36 @@ def audit_logs():
     except Exception as e:
         print(f"❌ Audit Logs Error: {str(e)}")
         flash(f'Error loading audit logs: {str(e)}', 'danger')
+        return render_template('errors/500.html'), 500
+
+# ============================================
+# VIEW PATIENT DETAILS
+# ============================================
+@admin_bp.route('/patient/<int:patient_id>')
+def view_patient(patient_id):
+    if not is_admin():
+        return redirect(url_for('auth.login'))
+    
+    try:
+        patient = PatientProfile.query.get_or_404(patient_id)
+        return render_template('admin/patient_detail.html', patient=patient)
+    except Exception as e:
+        print(f"❌ Patient Detail Error: {str(e)}")
+        flash(f'Error loading patient: {str(e)}', 'danger')
+        return render_template('errors/500.html'), 500
+
+# ============================================
+# VIEW CLINICIAN DETAILS
+# ============================================
+@admin_bp.route('/clinician/<int:clinician_id>')
+def view_clinician(clinician_id):
+    if not is_admin():
+        return redirect(url_for('auth.login'))
+    
+    try:
+        clinician = ClinicianProfile.query.get_or_404(clinician_id)
+        return render_template('admin/clinician_detail.html', clinician=clinician)
+    except Exception as e:
+        print(f"❌ Clinician Detail Error: {str(e)}")
+        flash(f'Error loading clinician: {str(e)}', 'danger')
         return render_template('errors/500.html'), 500
