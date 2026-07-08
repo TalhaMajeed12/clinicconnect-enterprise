@@ -5,11 +5,13 @@
     <h2><i class="fas fa-user-md"></i> Clinicians</h2>
     <hr>
     
-    <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -21,8 +23,8 @@
             </a>
             
             <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
@@ -43,18 +45,27 @@
                                 <td>{{ clinician.specialty }}</td>
                                 <td>{{ clinician.license_number or 'N/A' }}</td>
                                 <td>{{ clinician.years_experience }} years</td>
-                                <td>PKR {{ clinician.consultation_fee|float }}</td>
-                                <td>PKR {{ (clinician.consultation_fee|float * 0.25)|int }}</td>
+                                <td><strong>PKR {{ clinician.consultation_fee|float }}</strong></td>
+                                <td><span class="badge bg-warning">PKR {{ (clinician.consultation_fee|float * 0.25)|int }}</span></td>
                                 <td>
-                                    <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">View</a>
-                                    <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning">Edit</a>
-                                    <button class="btn btn-sm btn-danger delete-clinician" data-id="{{ clinician.id }}">Delete</button>
+                                    <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-danger delete-clinician" data-id="{{ clinician.id }}" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="8" class="text-center text-muted">No clinicians found</td>
+                                <td colspan="8" class="text-center text-muted py-3">
+                                    <i class="fas fa-user-md fa-2x d-block mb-2"></i>
+                                    No clinicians found. Click "Add Clinician" to create one.
+                                </td>
                             </tr>
                         {% endif %}
                     </tbody>
@@ -67,17 +78,26 @@
 <script>
 document.querySelectorAll('.delete-clinician').forEach(btn => {
     btn.addEventListener('click', function() {
-        if (confirm('Delete this clinician?')) {
-            fetch(`/admin/clinician/${this.dataset.id}/delete`, {
+        if (confirm('Are you sure you want to delete this clinician? This action cannot be undone.')) {
+            const id = this.dataset.id;
+            fetch(`/admin/clinician/${id}/delete`, {
                 method: 'POST',
-                headers: {'X-Requested-With': 'XMLHttpRequest'}
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             })
-            .then(r => r.json())
+            .then(response => response.json())
             .then(data => {
-                if (data.success) location.reload();
-                else alert('Error: ' + data.error);
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
             })
-            .catch(err => alert('Error deleting clinician'));
+            .catch(err => {
+                alert('Error deleting clinician');
+                console.error(err);
+            });
         }
     });
 });

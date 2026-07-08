@@ -66,7 +66,7 @@ def patients():
         return render_template('errors/500.html'), 500
 
 # ============================================
-# CLINICIANS (FIXED)
+# CLINICIANS LIST
 # ============================================
 @admin_bp.route('/clinicians')
 def clinicians():
@@ -74,7 +74,6 @@ def clinicians():
         return redirect(url_for('auth.login'))
     
     try:
-        # Get all clinicians
         all_clinicians = ClinicianProfile.query.all()
         
         # Filter out admin user
@@ -89,6 +88,23 @@ def clinicians():
         print(traceback.format_exc())
         flash(f'Error loading clinicians: {str(e)}', 'danger')
         return render_template('admin/clinicians.html', clinicians=[])
+
+# ============================================
+# VIEW CLINICIAN (FIXED - Added try/except)
+# ============================================
+@admin_bp.route('/clinician/<int:clinician_id>')
+def view_clinician(clinician_id):
+    if not is_admin():
+        return redirect(url_for('auth.login'))
+    
+    try:
+        clinician = ClinicianProfile.query.get_or_404(clinician_id)
+        return render_template('admin/clinician_detail.html', clinician=clinician)
+    except Exception as e:
+        print(f"View Clinician Error: {str(e)}")
+        print(traceback.format_exc())
+        flash(f'Error loading clinician details: {str(e)}', 'danger')
+        return redirect(url_for('admin.clinicians'))
 
 # ============================================
 # ADD CLINICIAN
@@ -168,7 +184,7 @@ def edit_clinician(clinician_id):
                 clinician.user.phone = request.form.get('phone')
             
             db.session.commit()
-            flash('Clinician updated!', 'success')
+            flash('Clinician updated successfully!', 'success')
             return redirect(url_for('admin.clinicians'))
         except Exception as e:
             db.session.rollback()
@@ -212,6 +228,7 @@ def audit_logs():
         logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).paginate(page=page, per_page=50)
         return render_template('admin/audit_logs.html', logs=logs)
     except Exception as e:
+        print(f"Audit Logs Error: {str(e)}")
         flash('Error loading logs', 'danger')
         return render_template('errors/500.html'), 500
 
@@ -223,16 +240,10 @@ def view_patient(patient_id):
     if not is_admin():
         return redirect(url_for('auth.login'))
     
-    patient = PatientProfile.query.get_or_404(patient_id)
-    return render_template('admin/patient_detail.html', patient=patient)
-
-# ============================================
-# VIEW CLINICIAN
-# ============================================
-@admin_bp.route('/clinician/<int:clinician_id>')
-def view_clinician(clinician_id):
-    if not is_admin():
-        return redirect(url_for('auth.login'))
-    
-    clinician = ClinicianProfile.query.get_or_404(clinician_id)
-    return render_template('admin/clinician_detail.html', clinician=clinician)
+    try:
+        patient = PatientProfile.query.get_or_404(patient_id)
+        return render_template('admin/patient_detail.html', patient=patient)
+    except Exception as e:
+        print(f"View Patient Error: {str(e)}")
+        flash('Error loading patient details', 'danger')
+        return redirect(url_for('admin.patients'))
