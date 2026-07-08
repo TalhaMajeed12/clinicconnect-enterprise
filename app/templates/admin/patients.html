@@ -22,8 +22,6 @@
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
-                            <th>Date of Birth</th>
-                            <th>Gender</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -34,15 +32,13 @@
                             <td>{{ patient.user.full_name if patient.user else 'Unknown' }}</td>
                             <td>{{ patient.user.email if patient.user else 'N/A' }}</td>
                             <td>{{ patient.user.phone if patient.user else 'N/A' }}</td>
-                            <td>{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else 'N/A' }}</td>
-                            <td>{{ patient.gender or 'N/A' }}</td>
                             <td>
                                 <a href="{{ url_for('admin.view_patient', patient_id=patient.id) }}" class="btn btn-sm btn-info">View</a>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center">No patients found</td>
+                            <td colspan="5" class="text-center text-muted">No patients found</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container">
-    <h2><i class="fas fa-edit"></i> Edit Clinician: {{ clinician.user.full_name }}</h2>
+    <h2><i class="fas fa-edit"></i> Edit Clinician</h2>
     <hr>
     
     <div class="card">
@@ -11,29 +11,14 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="full_name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="full_name" name="full_name" value="{{ clinician.user.full_name }}" required>
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" name="full_name" value="{{ clinician.user.full_name if clinician.user else '' }}" required>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ clinician.user.email or '' }}">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="phone" class="form-label">Phone</label>
-                            <input type="text" class="form-control" id="phone" name="phone" value="{{ clinician.user.phone or '' }}">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="specialty" class="form-label">Specialty</label>
-                            <input type="text" class="form-control" id="specialty" name="specialty" value="{{ clinician.specialty }}" required>
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" value="{{ clinician.user.email if clinician.user else '' }}">
                         </div>
                     </div>
                 </div>
@@ -41,14 +26,14 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="license_number" class="form-label">License Number</label>
-                            <input type="text" class="form-control" id="license_number" name="license_number" value="{{ clinician.license_number or '' }}">
+                            <label class="form-label">Phone</label>
+                            <input type="text" class="form-control" name="phone" value="{{ clinician.user.phone if clinician.user else '' }}">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="years_experience" class="form-label">Years Experience</label>
-                            <input type="number" class="form-control" id="years_experience" name="years_experience" value="{{ clinician.years_experience }}">
+                            <label class="form-label">Specialty</label>
+                            <input type="text" class="form-control" name="specialty" value="{{ clinician.specialty }}" required>
                         </div>
                     </div>
                 </div>
@@ -56,16 +41,31 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="consultation_fee" class="form-label">Consultation Fee (PKR)</label>
-                            <input type="number" class="form-control" id="consultation_fee" name="consultation_fee" value="{{ clinician.consultation_fee }}" required>
-                            <small class="text-muted">Pre-payment will be 25% of this amount (4:1 ratio)</small>
+                            <label class="form-label">License Number</label>
+                            <input type="text" class="form-control" name="license_number" value="{{ clinician.license_number or '' }}">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Pre-payment Amount (Auto-calculated)</label>
-                            <input type="text" class="form-control" value="PKR {{ (clinician.consultation_fee * 0.25)|int }}" disabled>
-                            <small class="text-muted">This is 25% of the consultation fee (4:1 ratio)</small>
+                            <label class="form-label">Years Experience</label>
+                            <input type="number" class="form-control" name="years_experience" value="{{ clinician.years_experience }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Consultation Fee (PKR)</label>
+                            <input type="number" class="form-control" name="consultation_fee" id="fee" value="{{ clinician.consultation_fee }}" required>
+                            <small class="text-muted">Pre-payment = 25% of fee (4:1 ratio)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Pre-payment Amount</label>
+                            <input type="text" class="form-control" id="prepayment" value="PKR {{ (clinician.consultation_fee * 0.25)|int }}" disabled>
+                            <small class="text-muted">25% of consultation fee</small>
                         </div>
                     </div>
                 </div>
@@ -78,12 +78,9 @@
 </div>
 
 <script>
-// Auto-calculate pre-payment when fee changes
-document.getElementById('consultation_fee').addEventListener('input', function() {
+document.getElementById('fee').addEventListener('input', function() {
     const fee = parseFloat(this.value) || 0;
-    const prepayment = fee * 0.25;
-    const display = document.querySelector('input[disabled]');
-    display.value = 'PKR ' + Math.round(prepayment);
+    document.getElementById('prepayment').value = 'PKR ' + Math.round(fee * 0.25);
 });
 </script>
 {% endblock %}
