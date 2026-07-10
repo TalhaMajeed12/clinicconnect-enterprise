@@ -44,13 +44,21 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h5>Quick Actions</h5>
+                    <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary">Add Clinician</a>
-                    <a href="{{ url_for('admin.patients') }}" class="btn btn-success">View Patients</a>
-                    <a href="{{ url_for('admin.clinicians') }}" class="btn btn-info">Manage Clinicians</a>
-                    <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary">Audit Logs</a>
+                    <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Add Clinician
+                    </a>
+                    <a href="{{ url_for('admin.patients') }}" class="btn btn-success">
+                        <i class="fas fa-users"></i> View Patients
+                    </a>
+                    <a href="{{ url_for('admin.clinicians') }}" class="btn btn-info">
+                        <i class="fas fa-user-md"></i> Manage Clinicians
+                    </a>
+                    <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary">
+                        <i class="fas fa-history"></i> Audit Logs
+                    </a>
                 </div>
             </div>
         </div>

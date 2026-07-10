@@ -18,7 +18,14 @@
     
     <div class="card">
         <div class="card-body">
-            <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary mb-3">
+            <!-- Back to Dashboard Button -->
+            <div class="mb-3">
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </div>
+            
+            <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-success mb-3">
                 <i class="fas fa-plus"></i> Add Clinician
             </a>
             
@@ -48,13 +55,13 @@
                                 <td><strong>PKR {{ clinician.consultation_fee|float }}</strong></td>
                                 <td><span class="badge bg-warning">PKR {{ (clinician.consultation_fee|float * 0.25)|int }}</span></td>
                                 <td>
-                                    <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info" title="View">
+                                    <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning" title="Edit">
+                                    <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button class="btn btn-sm btn-danger delete-clinician" data-id="{{ clinician.id }}" title="Delete">
+                                    <button class="btn btn-sm btn-danger delete-clinician" data-id="{{ clinician.id }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
@@ -64,7 +71,7 @@
                             <tr>
                                 <td colspan="8" class="text-center text-muted py-3">
                                     <i class="fas fa-user-md fa-2x d-block mb-2"></i>
-                                    No clinicians found. Click "Add Clinician" to create one.
+                                    No clinicians found.
                                 </td>
                             </tr>
                         {% endif %}
@@ -78,13 +85,11 @@
 <script>
 document.querySelectorAll('.delete-clinician').forEach(btn => {
     btn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to delete this clinician? This action cannot be undone.')) {
+        if (confirm('Are you sure you want to delete this clinician?')) {
             const id = this.dataset.id;
             fetch(`/admin/clinician/${id}/delete`, {
                 method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => response.json())
             .then(data => {
@@ -94,10 +99,7 @@ document.querySelectorAll('.delete-clinician').forEach(btn => {
                     alert('Error: ' + data.error);
                 }
             })
-            .catch(err => {
-                alert('Error deleting clinician');
-                console.error(err);
-            });
+            .catch(err => alert('Error deleting clinician'));
         }
     });
 });

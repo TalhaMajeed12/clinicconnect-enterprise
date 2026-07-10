@@ -7,6 +7,16 @@
     
     <div class="card">
         <div class="card-body">
+            <!-- Back to Dashboard Button -->
+            <div class="mb-3">
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{{ url_for('admin.clinicians') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Clinicians
+                </a>
+            </div>
+            
             <form method="POST">
                 <div class="row">
                     <div class="col-md-6">
