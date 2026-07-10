@@ -5,18 +5,32 @@
     <h2><i class="fas fa-users"></i> Patients</h2>
     <hr>
     
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
     <div class="card">
         <div class="card-body">
             <form method="GET" class="mb-3">
                 <div class="input-group">
                     <input type="text" name="search" class="form-control" placeholder="Search patients..." value="{{ request.args.get('search', '') }}">
                     <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Search</button>
+                    {% if request.args.get('search') %}
+                        <a href="{{ url_for('admin.patients') }}" class="btn btn-secondary">Clear</a>
+                    {% endif %}
                 </div>
             </form>
             
             <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
@@ -26,21 +40,28 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for patient in patients %}
-                        <tr>
-                            <td>{{ patient.id }}</td>
-                            <td>{{ patient.user.full_name if patient.user else 'Unknown' }}</td>
-                            <td>{{ patient.user.email if patient.user else 'N/A' }}</td>
-                            <td>{{ patient.user.phone if patient.user else 'N/A' }}</td>
-                            <td>
-                                <a href="{{ url_for('admin.view_patient', patient_id=patient.id) }}" class="btn btn-sm btn-info">View</a>
-                            </td>
-                        </tr>
+                        {% if patients %}
+                            {% for patient in patients %}
+                            <tr>
+                                <td>{{ patient.id }}</td>
+                                <td>{{ patient.user.full_name if patient.user else 'Unknown' }}</td>
+                                <td>{{ patient.user.email if patient.user else 'N/A' }}</td>
+                                <td>{{ patient.user.phone if patient.user else 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin.view_patient', patient_id=patient.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
                         {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">No patients found</td>
-                        </tr>
-                        {% endfor %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">
+                                    <i class="fas fa-users fa-2x d-block mb-2"></i>
+                                    No patients found.
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>

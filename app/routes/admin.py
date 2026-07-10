@@ -106,7 +106,24 @@ def view_clinician(clinician_id):
         return redirect(url_for('admin.clinicians'))
 
 # ============================================
-# ADD CLINICIAN (FIXED)
+# VIEW PATIENT (FIXED)
+# ============================================
+@admin_bp.route('/patient/<int:patient_id>')
+def view_patient(patient_id):
+    if not is_admin():
+        return redirect(url_for('auth.login'))
+    
+    try:
+        patient = PatientProfile.query.get_or_404(patient_id)
+        return render_template('admin/patient_detail.html', patient=patient)
+    except Exception as e:
+        print(f"View Patient Error: {str(e)}")
+        print(traceback.format_exc())
+        flash(f'Error loading patient details: {str(e)}', 'danger')
+        return redirect(url_for('admin.patients'))
+
+# ============================================
+# ADD CLINICIAN
 # ============================================
 @admin_bp.route('/add-clinician', methods=['GET', 'POST'])
 def add_clinician():
@@ -137,7 +154,7 @@ def add_clinician():
             db.session.add(user)
             db.session.flush()
             
-            # FIX: Convert empty string to None for license_number
+            # Convert empty license number to None
             license_number = request.form.get('license_number')
             if license_number == '':
                 license_number = None
@@ -145,7 +162,7 @@ def add_clinician():
             clinician = ClinicianProfile(
                 user_id=user.id,
                 specialty=specialty,
-                license_number=license_number,  # Now None instead of empty string
+                license_number=license_number,
                 years_experience=int(request.form.get('years_experience', 0)),
                 consultation_fee=fee
             )
@@ -162,7 +179,7 @@ def add_clinician():
     return render_template('admin/add_clinician.html')
 
 # ============================================
-# EDIT CLINICIAN (FIXED)
+# EDIT CLINICIAN
 # ============================================
 @admin_bp.route('/clinician/<int:clinician_id>/edit', methods=['GET', 'POST'])
 def edit_clinician(clinician_id):
@@ -179,7 +196,7 @@ def edit_clinician(clinician_id):
         try:
             clinician.specialty = request.form.get('specialty')
             
-            # FIX: Convert empty string to None for license_number
+            # Convert empty license number to None
             license_number = request.form.get('license_number')
             clinician.license_number = license_number if license_number else None
             
@@ -239,19 +256,3 @@ def audit_logs():
         print(f"Audit Logs Error: {str(e)}")
         flash('Error loading logs', 'danger')
         return render_template('errors/500.html'), 500
-
-# ============================================
-# VIEW PATIENT
-# ============================================
-@admin_bp.route('/patient/<int:patient_id>')
-def view_patient(patient_id):
-    if not is_admin():
-        return redirect(url_for('auth.login'))
-    
-    try:
-        patient = PatientProfile.query.get_or_404(patient_id)
-        return render_template('admin/patient_detail.html', patient=patient)
-    except Exception as e:
-        print(f"View Patient Error: {str(e)}")
-        flash('Error loading patient details', 'danger')
-        return redirect(url_for('admin.patients'))
