@@ -9,30 +9,35 @@
                     <h4><i class="fas fa-user-plus"></i> Admin Registration</h4>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Note:</strong> This page is for creating admin accounts. Only authorized users should access this.
+                    </div>
+                    
                     <form method="POST">
                         <div class="mb-3">
                             <label class="form-label">Username *</label>
-                            <input type="text" class="form-control" name="username" required>
+                            <input type="text" class="form-control" name="username" value="{{ form.username if form else '' }}" required>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Full Name *</label>
-                            <input type="text" class="form-control" name="full_name" required>
+                            <input type="text" class="form-control" name="full_name" value="{{ form.full_name if form else '' }}" required>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Email *</label>
-                            <input type="email" class="form-control" name="email" required>
+                            <input type="email" class="form-control" name="email" value="{{ form.email if form else '' }}" required>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Phone *</label>
-                            <input type="text" class="form-control" name="phone" required>
+                            <input type="text" class="form-control" name="phone" value="{{ form.phone if form else '' }}" required>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Password *</label>
                             <input type="password" class="form-control" name="password" required>
+                            <small class="text-muted">At least 6 characters</small>
                         </div>
                         
                         <div class="mb-3">
@@ -42,6 +47,10 @@
                         
                         <button type="submit" class="btn btn-primary w-100">Register Admin</button>
                     </form>
+                    
+                    <div class="mt-3 text-center">
+                        <a href="{{ url_for('auth.admin_login') }}">Back to Admin Login</a>
+                    </div>
                 </div>
             </div>
         </div>
