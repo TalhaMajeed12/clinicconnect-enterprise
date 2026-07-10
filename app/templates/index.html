@@ -1,45 +1,70 @@
 {% extends "base.html" %}
 
+{% block title %}Home - ClinicConnect{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-10 text-center">
+<div class="row">
+    <div class="col-md-8 offset-md-2 text-center">
         <h1 class="display-4">
-            <i class="fas fa-heartbeat text-primary"></i> ClinicConnect
+            <i class="fas fa-heartbeat text-primary"></i> Welcome to ClinicConnect
         </h1>
-        <p class="lead">Smart Electronic Health Record System</p>
+        <p class="lead">Your trusted healthcare management system</p>
         <hr class="my-4">
-        <p>Secure healthcare management with AI assistance.</p>
         
         <div class="row mt-5">
             <div class="col-md-4">
-                <div class="card shadow-sm">
+                <div class="card">
                     <div class="card-body">
-                        <h5><i class="fas fa-user"></i> Patient</h5>
-                        <p>Access your medical records and book appointments.</p>
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">Login</a>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary btn-sm">Register</a>
+                        <i class="fas fa-user-md fa-3x text-primary"></i>
+                        <h5 class="card-title mt-3">For Patients</h5>
+                        <p class="card-text">Book appointments, view your history, and manage your health.</p>
+                        {% if not session.get('user_id') %}
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Register Now</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card shadow-sm">
+                <div class="card">
                     <div class="card-body">
-                        <h5><i class="fas fa-user-md"></i> Clinician</h5>
-                        <p>Manage patients, visits, and prescriptions.</p>
-                        <a href="{{ url_for('auth.clinician_login') }}" class="btn btn-success btn-sm">Login</a>
+                        <i class="fas fa-stethoscope fa-3x text-success"></i>
+                        <h5 class="card-title mt-3">For Clinicians</h5>
+                        <p class="card-text">Manage patients, track appointments, and provide care.</p>
+                        {% if not session.get('user_id') %}
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-success">Login</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card shadow-sm">
+                <div class="card">
                     <div class="card-body">
-                        <h5><i class="fas fa-lock"></i> Admin</h5>
-                        <p>Manage clinicians, patients, and system settings.</p>
-                        <a href="{{ url_for('auth.admin_login') }}" class="btn btn-warning btn-sm">Login</a>
+                        <i class="fas fa-user-shield fa-3x text-warning"></i>
+                        <h5 class="card-title mt-3">For Admins</h5>
+                        <p class="card-text">Manage clinicians, patients, and system settings.</p>
+                        {% if not session.get('user_id') %}
+                            <a href="{{ url_for('auth.admin_login') }}" class="btn btn-warning">Admin Login</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+        
+        {% if session.get('user_id') %}
+            <div class="mt-4">
+                <a href="
+                    {% if session.get('role') == 'admin' %}
+                        {{ url_for('admin.dashboard') }}
+                    {% elif session.get('role') == 'clinician' %}
+                        {{ url_for('clinician.dashboard') }}
+                    {% else %}
+                        {{ url_for('patient.dashboard') }}
+                    {% endif %}
+                " class="btn btn-primary btn-lg">
+                    Go to Dashboard
+                </a>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

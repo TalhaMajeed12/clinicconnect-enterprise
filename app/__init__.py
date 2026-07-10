@@ -13,12 +13,6 @@ from config import config
 import redis
 import traceback
 
-# ============================================
-# SENTRY DISABLED - Commented out for development
-# ============================================
-# import sentry_sdk
-# from sentry_sdk.integrations.flask import FlaskIntegration
-
 db = SQLAlchemy()
 mail = Mail()
 migrate = Migrate()
@@ -30,16 +24,6 @@ def create_app(config_name='default'):
     
     # Load configuration
     app.config.from_object(config.get(config_name, config['default']))
-    
-    # ============================================
-    # SENTRY DISABLED - Commented out for development
-    # ============================================
-    # if os.environ.get('SENTRY_DSN'):
-    #     sentry_sdk.init(
-    #         dsn=os.environ.get('SENTRY_DSN'),
-    #         integrations=[FlaskIntegration()],
-    #         environment=config_name,
-    #     )
     
     # Initialize extensions
     db.init_app(app)
@@ -91,9 +75,11 @@ def create_app(config_name='default'):
     # Setup logging
     setup_logging(app)
     
-    # Register blueprints
+    # ============================================
+    # REGISTER BLUEPRINTS
+    # ============================================
     from app.routes.auth import auth_bp
-    from app.routes.main import main_bp
+    from app.routes.main import main_bp      # ← ADD THIS
     from app.routes.admin import admin_bp
     from app.routes.clinician import clinician_bp
     from app.routes.patient import patient_bp
@@ -101,8 +87,8 @@ def create_app(config_name='default'):
     from app.routes.payment import payment_bp
     from app.routes.api import api_bp
     
+    app.register_blueprint(main_bp)           # ← ADD THIS
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(clinician_bp, url_prefix='/clinician')
     app.register_blueprint(patient_bp, url_prefix='/patient')
@@ -139,6 +125,7 @@ def create_app(config_name='default'):
             from app.models import (
                 User, PatientProfile, ClinicianProfile, 
                 Appointment, Payment, AuditLog, 
+                Visit, Prescription, Attendance,
                 OtpVerification, LoginAttempt, SystemSetting
             )
             
