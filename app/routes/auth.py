@@ -7,6 +7,17 @@ import traceback
 auth_bp = Blueprint('auth', __name__)
 
 # ============================================
+# HELPER FUNCTION: Redirect based on role
+# ============================================
+def redirect_based_on_role(role):
+    if role == 'admin':
+        return redirect(url_for('admin.dashboard'))
+    elif role == 'clinician':
+        return redirect(url_for('clinician.dashboard'))
+    else:
+        return redirect(url_for('patient.dashboard'))
+
+# ============================================
 # PATIENT LOGIN
 # ============================================
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -19,7 +30,7 @@ def login():
     
     if request.method == 'POST':
         try:
-            identifier = request.form.get('identifier')  # email or phone
+            identifier = request.form.get('identifier')
             password = request.form.get('password')
             
             if not identifier or not password:
@@ -38,6 +49,10 @@ def login():
             if not user.check_password(password):
                 flash('Invalid email/phone or password', 'danger')
                 return render_template('auth/login.html')
+            
+            if user.role == 'admin':
+                flash('Please use the Admin Login page.', 'warning')
+                return redirect(url_for('auth.admin_login'))
             
             if not user.is_active:
                 flash('Your account has been deactivated. Please contact admin.', 'danger')
@@ -65,6 +80,68 @@ def login():
     return render_template('auth/login.html')
 
 # ============================================
+# CLINICIAN LOGIN (NEW)
+# ============================================
+@auth_bp.route('/clinician/login', methods=['GET', 'POST'])
+def clinician_login():
+    # If user is already logged in as clinician, redirect to clinician dashboard
+    if session.get('user_id'):
+        user = User.query.get(session['user_id'])
+        if user and user.role == 'clinician':
+            return redirect(url_for('clinician.dashboard'))
+        elif user:
+            flash('You are already logged in as a different user.', 'warning')
+            return redirect_based_on_role(user.role)
+    
+    if request.method == 'POST':
+        try:
+            username = request.form.get('username')
+            password = request.form.get('password')
+            
+            if not username or not password:
+                flash('Username and password are required', 'danger')
+                return render_template('auth/clinician_login.html')
+            
+            user = User.query.filter_by(username=username).first()
+            
+            if not user:
+                flash('Invalid username or password', 'danger')
+                return render_template('auth/clinician_login.html')
+            
+            if not user.check_password(password):
+                flash('Invalid username or password', 'danger')
+                return render_template('auth/clinician_login.html')
+            
+            if user.role != 'clinician':
+                flash('Access denied. This is a clinician-only login page.', 'danger')
+                return render_template('auth/clinician_login.html')
+            
+            if not user.is_active:
+                flash('Your account has been deactivated. Please contact admin.', 'danger')
+                return render_template('auth/clinician_login.html')
+            
+            # Login successful
+            session['user_id'] = user.id
+            session['role'] = user.role
+            session['username'] = user.username
+            session['full_name'] = user.full_name
+            session['email'] = user.email
+            
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            
+            flash(f'Welcome back, Dr. {user.full_name}!', 'success')
+            return redirect(url_for('clinician.dashboard'))
+            
+        except Exception as e:
+            print(f"Clinician Login Error: {str(e)}")
+            print(traceback.format_exc())
+            flash('Login failed. Please try again.', 'danger')
+            return render_template('auth/clinician_login.html')
+    
+    return render_template('auth/clinician_login.html')
+
+# ============================================
 # ADMIN LOGIN
 # ============================================
 @auth_bp.route('/admin/login', methods=['GET', 'POST'])
@@ -74,6 +151,9 @@ def admin_login():
         user = User.query.get(session['user_id'])
         if user and user.role == 'admin':
             return redirect(url_for('admin.dashboard'))
+        elif user:
+            flash('You are already logged in as a different user.', 'warning')
+            return redirect_based_on_role(user.role)
     
     if request.method == 'POST':
         try:
@@ -124,7 +204,7 @@ def admin_login():
     return render_template('auth/admin_login.html')
 
 # ============================================
-# REGISTRATION - DISABLED (Patients cannot register)
+# REGISTRATION - DISABLED
 # ============================================
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -206,29 +286,27 @@ def admin_register():
     return render_template('auth/admin_register.html')
 
 # ============================================
-# LOGOUT
+# LOGOUT (FIXED)
 # ============================================
 @auth_bp.route('/logout')
 def logout():
+    # Get user info before clearing session
     role = session.get('role')
-    session.clear()
-    flash('You have been logged out successfully.', 'success')
+    username = session.get('username')
     
+    # Clear the session
+    session.clear()
+    
+    # Flash message based on user type
     if role == 'admin':
+        flash('Admin logged out successfully.', 'success')
         return redirect(url_for('auth.admin_login'))
-    else:
-        return redirect(url_for('auth.login'))
-
-# ============================================
-# HELPER FUNCTION: Redirect based on role
-# ============================================
-def redirect_based_on_role(role):
-    if role == 'admin':
-        return redirect(url_for('admin.dashboard'))
     elif role == 'clinician':
-        return redirect(url_for('clinician.dashboard'))
+        flash('Clinician logged out successfully.', 'success')
+        return redirect(url_for('auth.clinician_login'))
     else:
-        return redirect(url_for('patient.dashboard'))
+        flash('Logged out successfully.', 'success')
+        return redirect(url_for('auth.login'))
 
 # ============================================
 # CHANGE LANGUAGE

@@ -40,10 +40,28 @@
             border-radius: 20px;
             color: white;
             font-size: 0.85rem;
+            display: inline-block;
         }
         .footer {
             border-top: 1px solid #dee2e6;
             margin-top: 2rem;
+        }
+        .role-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .role-badge.admin {
+            background: #dc3545;
+            color: white;
+        }
+        .role-badge.clinician {
+            background: #28a745;
+            color: white;
+        }
+        .role-badge.patient {
+            background: #17a2b8;
+            color: white;
         }
     </style>
 </head>
@@ -65,7 +83,7 @@
             
             <!-- Navbar Content -->
             <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Left Side Navigation -->
+                <!-- Left Side Navigation - Role Based Menus -->
                 <ul class="navbar-nav me-auto">
                     {% if session.get('user_id') %}
                         {% if session.get('role') == 'admin' %}
@@ -132,14 +150,15 @@
                 
                 <!-- Right Side Navigation -->
                 <ul class="navbar-nav ms-auto">
+                    
                     <!-- User Info (when logged in) -->
                     {% if session.get('user_id') %}
                         <li class="nav-item">
                             <span class="user-badge">
                                 <i class="fas fa-user-circle"></i> 
                                 {{ session.get('full_name', 'User') }}
-                                <span class="badge bg-light text-dark ms-1">
-                                    {{ session.get('role', 'user')|capitalize }}
+                                <span class="role-badge {{ session.get('role', 'patient') }}">
+                                    {{ session.get('role', 'patient')|capitalize }}
                                 </span>
                             </span>
                         </li>
@@ -173,17 +192,24 @@
                             </a>
                         </li>
                     {% else %}
+                        <!-- Patient Login -->
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('auth.login') }}">
-                                <i class="fas fa-sign-in-alt"></i> Login
+                                <i class="fas fa-user"></i> Patient
                             </a>
                         </li>
+                        <!-- Clinician Login -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.clinician_login') }}">
+                                <i class="fas fa-user-md"></i> Clinician
+                            </a>
+                        </li>
+                        <!-- Admin Login -->
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('auth.admin_login') }}">
                                 <i class="fas fa-user-shield"></i> Admin
                             </a>
                         </li>
-                        <!-- Register link removed - patients cannot self-register -->
                     {% endif %}
                 </ul>
             </div>
