@@ -90,7 +90,7 @@ def clinicians():
         return render_template('admin/clinicians.html', clinicians=[])
 
 # ============================================
-# VIEW CLINICIAN (FIXED - Added try/except)
+# VIEW CLINICIAN
 # ============================================
 @admin_bp.route('/clinician/<int:clinician_id>')
 def view_clinician(clinician_id):
@@ -102,12 +102,11 @@ def view_clinician(clinician_id):
         return render_template('admin/clinician_detail.html', clinician=clinician)
     except Exception as e:
         print(f"View Clinician Error: {str(e)}")
-        print(traceback.format_exc())
-        flash(f'Error loading clinician details: {str(e)}', 'danger')
+        flash(f'Error loading clinician details', 'danger')
         return redirect(url_for('admin.clinicians'))
 
 # ============================================
-# ADD CLINICIAN
+# ADD CLINICIAN (FIXED)
 # ============================================
 @admin_bp.route('/add-clinician', methods=['GET', 'POST'])
 def add_clinician():
@@ -138,10 +137,15 @@ def add_clinician():
             db.session.add(user)
             db.session.flush()
             
+            # FIX: Convert empty string to None for license_number
+            license_number = request.form.get('license_number')
+            if license_number == '':
+                license_number = None
+            
             clinician = ClinicianProfile(
                 user_id=user.id,
                 specialty=specialty,
-                license_number=request.form.get('license_number'),
+                license_number=license_number,  # Now None instead of empty string
                 years_experience=int(request.form.get('years_experience', 0)),
                 consultation_fee=fee
             )
@@ -158,7 +162,7 @@ def add_clinician():
     return render_template('admin/add_clinician.html')
 
 # ============================================
-# EDIT CLINICIAN
+# EDIT CLINICIAN (FIXED)
 # ============================================
 @admin_bp.route('/clinician/<int:clinician_id>/edit', methods=['GET', 'POST'])
 def edit_clinician(clinician_id):
@@ -174,7 +178,11 @@ def edit_clinician(clinician_id):
     if request.method == 'POST':
         try:
             clinician.specialty = request.form.get('specialty')
-            clinician.license_number = request.form.get('license_number')
+            
+            # FIX: Convert empty string to None for license_number
+            license_number = request.form.get('license_number')
+            clinician.license_number = license_number if license_number else None
+            
             clinician.years_experience = int(request.form.get('years_experience', 0))
             clinician.consultation_fee = float(request.form.get('consultation_fee', 2000))
             
