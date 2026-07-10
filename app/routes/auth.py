@@ -9,99 +9,7 @@ import traceback
 auth_bp = Blueprint('auth', __name__)
 
 # ============================================
-# PATIENT REGISTRATION
-# ============================================
-@auth_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    # Initialize form data with empty values
-    form_data = {
-        'full_name': '',
-        'email': '',
-        'phone': '',
-        'password': '',
-        'confirm_password': ''
-    }
-    
-    if request.method == 'POST':
-        # Capture form data to preserve on error
-        form_data = {
-            'full_name': request.form.get('full_name', ''),
-            'email': request.form.get('email', ''),
-            'phone': request.form.get('phone', ''),
-            'password': request.form.get('password', ''),
-            'confirm_password': request.form.get('confirm_password', '')
-        }
-        
-        try:
-            full_name = form_data['full_name']
-            email = form_data['email']
-            phone = form_data['phone']
-            password = form_data['password']
-            confirm_password = form_data['confirm_password']
-            
-            # Validation
-            if not full_name or not email or not phone or not password:
-                flash('All fields are required', 'danger')
-                return render_template('auth/register.html', form=form_data)
-            
-            if password != confirm_password:
-                flash('Passwords do not match', 'danger')
-                return render_template('auth/register.html', form=form_data)
-            
-            if len(password) < 6:
-                flash('Password must be at least 6 characters', 'danger')
-                return render_template('auth/register.html', form=form_data)
-            
-            if not any(c.isupper() for c in password):
-                flash('Password must contain at least one uppercase letter', 'danger')
-                return render_template('auth/register.html', form=form_data)
-            
-            # Check if user exists
-            if User.query.filter_by(email=email).first():
-                flash('Email already registered', 'danger')
-                return render_template('auth/register.html', form=form_data)
-            
-            if User.query.filter_by(phone=phone).first():
-                flash('Phone number already registered', 'danger')
-                return render_template('auth/register.html', form=form_data)
-            
-            # Create user (role is always 'patient' for registration)
-            username = email.split('@')[0]
-            # Make username unique if it already exists
-            if User.query.filter_by(username=username).first():
-                username = f"{username}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
-            
-            user = User(
-                username=username,
-                role='patient',  # Force role to patient
-                full_name=full_name,
-                email=email,
-                phone=phone
-            )
-            user.set_password(password)
-            
-            db.session.add(user)
-            db.session.flush()
-            
-            # Create patient profile
-            patient = PatientProfile(user_id=user.id)
-            db.session.add(patient)
-            db.session.commit()
-            
-            flash('Registration successful! Please login.', 'success')
-            return redirect(url_for('auth.login'))
-            
-        except Exception as e:
-            db.session.rollback()
-            print(f"Registration Error: {str(e)}")
-            print(traceback.format_exc())
-            flash('Registration failed. Please try again.', 'danger')
-            return render_template('auth/register.html', form=form_data)
-    
-    return render_template('auth/register.html', form=form_data)
-
-# ============================================
-# PATIENT LOGIN
+# PATIENT LOGIN (Patients can only login)
 # ============================================
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -128,7 +36,7 @@ def login():
                 return render_template('auth/login.html')
             
             if not user.is_active:
-                flash('Account is deactivated', 'danger')
+                flash('Account is deactivated. Please contact admin.', 'danger')
                 return render_template('auth/login.html')
             
             # Login successful
@@ -217,10 +125,26 @@ def admin_login():
     return render_template('auth/admin_login.html')
 
 # ============================================
-# ADMIN REGISTRATION
+# PATIENT REGISTRATION - DISABLED
+# ============================================
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    # PATIENT REGISTRATION IS DISABLED
+    # Patients can only be created by Admin or Clinician
+    flash('Patient self-registration is disabled. Please contact your clinician or admin.', 'warning')
+    return redirect(url_for('auth.login'))
+
+# ============================================
+# ADMIN REGISTRATION (For creating admin accounts)
 # ============================================
 @auth_bp.route('/admin/register', methods=['GET', 'POST'])
 def admin_register():
+    # Check if any admin already exists (security)
+    existing_admin = User.query.filter_by(role='admin').first()
+    if existing_admin:
+        flash('Admin already exists. Only one admin account is allowed.', 'danger')
+        return redirect(url_for('auth.admin_login'))
+    
     form_data = {
         'username': '',
         'full_name': '',
@@ -301,18 +225,14 @@ def admin_register():
     return render_template('auth/admin_register.html', form=form_data)
 
 # ============================================
-# LOGOUT (FIXED - Redirects based on role)
+# LOGOUT
 # ============================================
 @auth_bp.route('/logout')
 def logout():
-    # Get the user's role before clearing session
     role = session.get('role')
-    
-    # Clear the session
     session.clear()
     flash('Logged out successfully', 'success')
     
-    # Redirect based on role
     if role == 'admin':
         return redirect(url_for('auth.admin_login'))
     else:

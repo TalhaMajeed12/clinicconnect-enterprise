@@ -13,19 +13,19 @@
         
         <div class="row mt-5">
             <div class="col-md-4">
-                <div class="card">
+                <div class="card h-100">
                     <div class="card-body">
                         <i class="fas fa-user-md fa-3x text-primary"></i>
                         <h5 class="card-title mt-3">For Patients</h5>
                         <p class="card-text">Book appointments, view your history, and manage your health.</p>
                         {% if not session.get('user_id') %}
-                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Register Now</a>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
                         {% endif %}
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card">
+                <div class="card h-100">
                     <div class="card-body">
                         <i class="fas fa-stethoscope fa-3x text-success"></i>
                         <h5 class="card-title mt-3">For Clinicians</h5>
@@ -37,7 +37,7 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card">
+                <div class="card h-100">
                     <div class="card-body">
                         <i class="fas fa-user-shield fa-3x text-warning"></i>
                         <h5 class="card-title mt-3">For Admins</h5>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2><i class="fas fa-user"></i> Patient Details</h2>
+    <hr>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-primary">Personal Information</h5>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th style="width:40%">Full Name</th>
+                            <td>{{ patient.user.full_name if patient.user else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email</th>
+                            <td>{{ patient.user.email if patient.user else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phone</th>
+                            <td>{{ patient.user.phone if patient.user else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Username</th>
+                            <td>{{ patient.user.username if patient.user else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date of Birth</th>
+                            <td>{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Gender</th>
+                            <td>{{ patient.gender or 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-success">Medical Information</h5>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th style="width:40%">Blood Group</th>
+                            <td>{{ patient.blood_group or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Allergies</th>
+                            <td>{{ patient.allergies or 'None' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Age</th>
+                            <td>{{ patient.age or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Is Child</th>
+                            <td>{{ 'Yes' if patient.is_child else 'No' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Emergency Contact</th>
+                            <td>{{ patient.emergency_contact_name or 'N/A' }}<br>
+                                <small>{{ patient.emergency_contact_phone or '' }}</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <a href="{{ url_for('admin.patients') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Patients
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
