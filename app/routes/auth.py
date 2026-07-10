@@ -217,7 +217,7 @@ def admin_login():
     return render_template('auth/admin_login.html')
 
 # ============================================
-# ADMIN REGISTRATION (For creating admin accounts)
+# ADMIN REGISTRATION
 # ============================================
 @auth_bp.route('/admin/register', methods=['GET', 'POST'])
 def admin_register():
@@ -301,13 +301,22 @@ def admin_register():
     return render_template('auth/admin_register.html', form=form_data)
 
 # ============================================
-# LOGOUT
+# LOGOUT (FIXED - Redirects based on role)
 # ============================================
 @auth_bp.route('/logout')
 def logout():
+    # Get the user's role before clearing session
+    role = session.get('role')
+    
+    # Clear the session
     session.clear()
     flash('Logged out successfully', 'success')
-    return redirect(url_for('auth.login'))
+    
+    # Redirect based on role
+    if role == 'admin':
+        return redirect(url_for('auth.admin_login'))
+    else:
+        return redirect(url_for('auth.login'))
 
 # ============================================
 # CHANGE LANGUAGE
