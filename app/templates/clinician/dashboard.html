@@ -1,41 +1,145 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Welcome, Dr. {{ clinician.user.full_name if clinician.user else '' }}</h2>
-<hr>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5>Today's Appointments</h5>
+<div class="container-fluid">
+    <h2>Welcome, Dr. {{ clinician.user.full_name if clinician.user else 'Clinician' }}</h2>
+    <hr>
+    
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>Total Patients</h5>
+                    <h2>{{ total_patients or 0 }}</h2>
+                </div>
             </div>
-            <div class="card-body">
-                {% if appointments %}
-                    <ul class="list-group">
-                        {% for apt in appointments %}
-                            <li class="list-group-item">
-                                {{ apt.patient.user.full_name if apt.patient else '' }} - 
-                                {{ apt.appointment_date.strftime('%H:%M') }}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>No appointments today.</p>
-                {% endif %}
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>My Appointments</h5>
+                    <h2>{{ total_appointments or 0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5>Pending</h5>
+                    <h2>{{ pending_appointments or 0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>Today's Appointments</h5>
+                    <h2>{{ appointments|length }}</h2>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5>Quick Actions</h5>
+    
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('clinician.add_patient') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Add Patient
+                    </a>
+                    <a href="{{ url_for('clinician.patients_list') }}" class="btn btn-success">
+                        <i class="fas fa-users"></i> View Patients
+                    </a>
+                    <a href="{{ url_for('clinician.appointments') }}" class="btn btn-warning">
+                        <i class="fas fa-calendar-check"></i> View Appointments
+                    </a>
+                    <button class="btn btn-info" onclick="toggleAttendance()">
+                        <i class="fas fa-clock"></i> <span id="attendance-status">
+                            {% set att = clinician.attendance if clinician.attendance else None %}
+                            {% if att and att.status == 'online' %}
+                                Online
+                            {% else %}
+                                Offline
+                            {% endif %}
+                        </span>
+                    </button>
+                </div>
             </div>
-            <div class="card-body">
-                <a href="{{ url_for('clinician.add_patient') }}" class="btn btn-primary w-100 mb-2">Add Patient</a>
-                <a href="{{ url_for('clinician.patients_list') }}" class="btn btn-info w-100">View Patients</a>
+        </div>
+    </div>
+    
+    <!-- Today's Appointments -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Today's Appointments</h5>
+                </div>
+                <div class="card-body">
+                    {% if appointments %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Time</th>
+                                        <th>Reason</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for appointment in appointments %}
+                                    <tr>
+                                        <td>{{ appointment.patient.user.full_name if appointment.patient and appointment.patient.user else 'N/A' }}</td>
+                                        <td>{{ appointment.appointment_date.strftime('%H:%M') if appointment.appointment_date else 'N/A' }}</td>
+                                        <td>{{ appointment.reason or 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if appointment.status == 'pending' %}warning{% elif appointment.status == 'confirmed' %}info{% elif appointment.status == 'completed' %}success{% else %}danger{% endif %}">
+                                                {{ appointment.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No appointments today.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+
+<script>
+function toggleAttendance() {
+    fetch('/clinician/toggle_attendance', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            document.getElementById('attendance-status').textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+        }
+    })
+    .catch(error => {
+        alert('Error toggling attendance');
+    });
+}
+</script>
+{% endblock %}

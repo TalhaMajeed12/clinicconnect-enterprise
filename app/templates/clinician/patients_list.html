@@ -1,1 +1,63 @@
- 
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2><i class="fas fa-users"></i> My Patients</h2>
+    <hr>
+    
+    <div class="card">
+        <div class="card-body">
+            <a href="{{ url_for('clinician.add_patient') }}" class="btn btn-primary mb-3">
+                <i class="fas fa-user-plus"></i> Add Patient
+            </a>
+            
+            <form method="GET" class="mb-3">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search patients..." value="{{ request.args.get('search', '') }}">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Search</button>
+                </div>
+            </form>
+            
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Blood Group</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if patients %}
+                            {% for patient in patients %}
+                            <tr>
+                                <td>{{ patient.id }}</td>
+                                <td>{{ patient.user.full_name if patient.user else 'Unknown' }}</td>
+                                <td>{{ patient.user.email if patient.user else 'N/A' }}</td>
+                                <td>{{ patient.user.phone if patient.user else 'N/A' }}</td>
+                                <td>{{ patient.blood_group or 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ url_for('clinician.patient_folder', patient_id=patient.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-folder"></i> View Folder
+                                    </a>
+                                    <a href="{{ url_for('clinician.add_visit', patient_id=patient.id) }}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus"></i> Add Visit
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No patients found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

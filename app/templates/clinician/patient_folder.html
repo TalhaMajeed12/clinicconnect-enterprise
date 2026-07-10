@@ -1,1 +1,84 @@
- 
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2><i class="fas fa-folder"></i> Patient Folder: {{ patient.user.full_name if patient.user else 'Unknown' }}</h2>
+    <hr>
+    
+    <!-- Patient Info -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5>Patient Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Email:</strong> {{ patient.user.email if patient.user else 'N/A' }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Phone:</strong> {{ patient.user.phone if patient.user else 'N/A' }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Blood Group:</strong> {{ patient.blood_group or 'N/A' }}
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-4">
+                    <strong>Age:</strong> {{ patient.age or 'N/A' }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Allergies:</strong> {{ patient.allergies or 'None' }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Is Child:</strong> {{ 'Yes' if patient.is_child else 'No' }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="mb-3">
+        <a href="{{ url_for('clinician.add_visit', patient_id=patient.id) }}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add Visit
+        </a>
+        <a href="{{ url_for('clinician.patients_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Patients
+        </a>
+    </div>
+    
+    <!-- Visits -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Visit History</h5>
+        </div>
+        <div class="card-body">
+            {% if visits %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Chief Complaint</th>
+                                <th>Diagnosis</th>
+                                <th>Treatment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for visit in visits %}
+                            <tr>
+                                <td>{{ visit.visit_date.strftime('%Y-%m-%d %H:%M') if visit.visit_date else 'N/A' }}</td>
+                                <td>{{ visit.chief_complaint or 'N/A' }}</td>
+                                <td>{{ visit.primary_diagnosis or 'N/A' }}</td>
+                                <td>{{ visit.treatment_plan or 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No visits recorded for this patient.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
