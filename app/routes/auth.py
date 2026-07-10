@@ -1,25 +1,29 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from app import db
 from app.models import User, PatientProfile, ClinicianProfile, AuditLog, LoginAttempt
-from app.utils.translations import t
 from datetime import datetime
-import re
 import traceback
 
 auth_bp = Blueprint('auth', __name__)
 
 # ============================================
-# PATIENT LOGIN (Patients can only login)
+# PATIENT LOGIN
 # ============================================
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    # If user is already logged in, redirect to appropriate dashboard
+    if session.get('user_id'):
+        user = User.query.get(session['user_id'])
+        if user:
+            return redirect_based_on_role(user.role)
+    
     if request.method == 'POST':
         try:
-            identifier = request.form.get('email') or request.form.get('phone')
+            identifier = request.form.get('identifier')  # email or phone
             password = request.form.get('password')
             
             if not identifier or not password:
-                flash('Email/Phone and password required', 'danger')
+                flash('Email/Phone and password are required', 'danger')
                 return render_template('auth/login.html')
             
             # Find user by email or phone
@@ -28,15 +32,15 @@ def login():
             ).first()
             
             if not user:
-                flash('Invalid credentials', 'danger')
+                flash('Invalid email/phone or password', 'danger')
                 return render_template('auth/login.html')
             
             if not user.check_password(password):
-                flash('Invalid credentials', 'danger')
+                flash('Invalid email/phone or password', 'danger')
                 return render_template('auth/login.html')
             
             if not user.is_active:
-                flash('Account is deactivated. Please contact admin.', 'danger')
+                flash('Your account has been deactivated. Please contact admin.', 'danger')
                 return render_template('auth/login.html')
             
             # Login successful
@@ -44,27 +48,14 @@ def login():
             session['role'] = user.role
             session['username'] = user.username
             session['full_name'] = user.full_name
+            session['email'] = user.email
             
             user.last_login = datetime.utcnow()
-            
-            # Log login attempt
-            login_attempt = LoginAttempt(
-                identifier=identifier,
-                ip_address=request.remote_addr,
-                user_agent=request.headers.get('User-Agent'),
-                success=True
-            )
-            db.session.add(login_attempt)
             db.session.commit()
             
-            # Redirect based on role
-            if user.role == 'admin':
-                return redirect(url_for('admin.dashboard'))
-            elif user.role == 'clinician':
-                return redirect(url_for('clinician.dashboard'))
-            else:
-                return redirect(url_for('patient.dashboard'))
-                
+            flash(f'Welcome back, {user.full_name}!', 'success')
+            return redirect_based_on_role(user.role)
+            
         except Exception as e:
             print(f"Login Error: {str(e)}")
             print(traceback.format_exc())
@@ -78,37 +69,45 @@ def login():
 # ============================================
 @auth_bp.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
+    # If user is already logged in as admin, redirect to admin dashboard
+    if session.get('user_id'):
+        user = User.query.get(session['user_id'])
+        if user and user.role == 'admin':
+            return redirect(url_for('admin.dashboard'))
+    
     if request.method == 'POST':
         try:
             username = request.form.get('username')
             password = request.form.get('password')
             
             if not username or not password:
-                flash('Username and password required', 'danger')
+                flash('Username and password are required', 'danger')
                 return render_template('auth/admin_login.html')
             
             user = User.query.filter_by(username=username).first()
             
             if not user:
-                flash('Invalid credentials', 'danger')
+                flash('Invalid username or password', 'danger')
                 return render_template('auth/admin_login.html')
             
             if not user.check_password(password):
-                flash('Invalid credentials', 'danger')
+                flash('Invalid username or password', 'danger')
                 return render_template('auth/admin_login.html')
             
             if user.role != 'admin':
-                flash('Access denied. Admin only.', 'danger')
+                flash('Access denied. This is an admin-only login page.', 'danger')
                 return render_template('auth/admin_login.html')
             
             if not user.is_active:
-                flash('Account is deactivated', 'danger')
+                flash('Your account has been deactivated.', 'danger')
                 return render_template('auth/admin_login.html')
             
+            # Login successful
             session['user_id'] = user.id
             session['role'] = user.role
             session['username'] = user.username
             session['full_name'] = user.full_name
+            session['email'] = user.email
             
             user.last_login = datetime.utcnow()
             db.session.commit()
@@ -119,79 +118,61 @@ def admin_login():
         except Exception as e:
             print(f"Admin Login Error: {str(e)}")
             print(traceback.format_exc())
-            flash('Login failed', 'danger')
+            flash('Login failed. Please try again.', 'danger')
             return render_template('auth/admin_login.html')
     
     return render_template('auth/admin_login.html')
 
 # ============================================
-# PATIENT REGISTRATION - DISABLED
+# REGISTRATION - DISABLED (Patients cannot register)
 # ============================================
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    # PATIENT REGISTRATION IS DISABLED
-    # Patients can only be created by Admin or Clinician
     flash('Patient self-registration is disabled. Please contact your clinician or admin.', 'warning')
     return redirect(url_for('auth.login'))
 
 # ============================================
-# ADMIN REGISTRATION (For creating admin accounts)
+# ADMIN REGISTRATION
 # ============================================
 @auth_bp.route('/admin/register', methods=['GET', 'POST'])
 def admin_register():
-    # Check if any admin already exists (security)
+    # Check if any admin already exists
     existing_admin = User.query.filter_by(role='admin').first()
     if existing_admin:
-        flash('Admin already exists. Only one admin account is allowed.', 'danger')
+        flash('Admin account already exists. Only one admin account is allowed.', 'danger')
         return redirect(url_for('auth.admin_login'))
     
-    form_data = {
-        'username': '',
-        'full_name': '',
-        'email': '',
-        'phone': '',
-        'password': '',
-        'confirm_password': ''
-    }
-    
     if request.method == 'POST':
-        form_data = {
-            'username': request.form.get('username', ''),
-            'full_name': request.form.get('full_name', ''),
-            'email': request.form.get('email', ''),
-            'phone': request.form.get('phone', ''),
-            'password': request.form.get('password', ''),
-            'confirm_password': request.form.get('confirm_password', '')
-        }
-        
         try:
-            username = form_data['username']
-            full_name = form_data['full_name']
-            email = form_data['email']
-            phone = form_data['phone']
-            password = form_data['password']
-            confirm_password = form_data['confirm_password']
+            username = request.form.get('username')
+            full_name = request.form.get('full_name')
+            email = request.form.get('email')
+            phone = request.form.get('phone')
+            password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
             
-            if not username or not full_name or not email or not phone or not password:
+            # Validation
+            if not all([username, full_name, email, phone, password]):
                 flash('All fields are required', 'danger')
-                return render_template('auth/admin_register.html', form=form_data)
+                return render_template('auth/admin_register.html', form=request.form)
             
             if password != confirm_password:
                 flash('Passwords do not match', 'danger')
-                return render_template('auth/admin_register.html', form=form_data)
+                return render_template('auth/admin_register.html', form=request.form)
             
             if len(password) < 6:
                 flash('Password must be at least 6 characters', 'danger')
-                return render_template('auth/admin_register.html', form=form_data)
+                return render_template('auth/admin_register.html', form=request.form)
             
             if User.query.filter_by(username=username).first():
                 flash('Username already exists', 'danger')
-                return render_template('auth/admin_register.html', form=form_data)
+                return render_template('auth/admin_register.html', form=request.form)
             
             if User.query.filter_by(email=email).first():
                 flash('Email already registered', 'danger')
-                return render_template('auth/admin_register.html', form=form_data)
+                return render_template('auth/admin_register.html', form=request.form)
             
+            # Create admin user
             user = User(
                 username=username,
                 role='admin',
@@ -213,16 +194,16 @@ def admin_register():
             db.session.add(clinician)
             db.session.commit()
             
-            flash('Admin created successfully! Please login.', 'success')
+            flash('Admin account created successfully! Please login.', 'success')
             return redirect(url_for('auth.admin_login'))
             
         except Exception as e:
             db.session.rollback()
             print(f"Admin Registration Error: {str(e)}")
             flash(f'Error: {str(e)}', 'danger')
-            return render_template('auth/admin_register.html', form=form_data)
+            return render_template('auth/admin_register.html', form=request.form)
     
-    return render_template('auth/admin_register.html', form=form_data)
+    return render_template('auth/admin_register.html')
 
 # ============================================
 # LOGOUT
@@ -231,12 +212,23 @@ def admin_register():
 def logout():
     role = session.get('role')
     session.clear()
-    flash('Logged out successfully', 'success')
+    flash('You have been logged out successfully.', 'success')
     
     if role == 'admin':
         return redirect(url_for('auth.admin_login'))
     else:
         return redirect(url_for('auth.login'))
+
+# ============================================
+# HELPER FUNCTION: Redirect based on role
+# ============================================
+def redirect_based_on_role(role):
+    if role == 'admin':
+        return redirect(url_for('admin.dashboard'))
+    elif role == 'clinician':
+        return redirect(url_for('clinician.dashboard'))
+    else:
+        return redirect(url_for('patient.dashboard'))
 
 # ============================================
 # CHANGE LANGUAGE
@@ -260,6 +252,7 @@ def status():
                 'authenticated': True,
                 'username': user.username,
                 'role': user.role,
-                'full_name': user.full_name
+                'full_name': user.full_name,
+                'email': user.email
             })
     return jsonify({'authenticated': False})
