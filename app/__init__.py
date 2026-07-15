@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session
+from flask import Flask, render_template, session, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
 from flask_migrate import Migrate
@@ -79,7 +79,7 @@ def create_app(config_name='default'):
     # REGISTER BLUEPRINTS
     # ============================================
     from app.routes.auth import auth_bp
-    from app.routes.main import main_bp      # ← ADD THIS
+    from app.routes.main import main_bp
     from app.routes.admin import admin_bp
     from app.routes.clinician import clinician_bp
     from app.routes.patient import patient_bp
@@ -87,7 +87,7 @@ def create_app(config_name='default'):
     from app.routes.payment import payment_bp
     from app.routes.api import api_bp
     
-    app.register_blueprint(main_bp)           # ← ADD THIS
+    app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(clinician_bp, url_prefix='/clinician')
@@ -99,14 +99,23 @@ def create_app(config_name='default'):
     # Error handlers
     register_error_handlers(app)
     
-    # Security headers
+    # ============================================
+    # UNIVERSAL CACHE PREVENTION & SECURITY HEADERS
+    # ============================================
     @app.after_request
-    def add_security_headers(response):
+    def add_security_and_cache_headers(response):
+        # Security headers
         if app.config.get('SESSION_COOKIE_SECURE', False):
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-XSS-Protection'] = '1; mode=block'
+        
+        # Cache prevention - UNIVERSAL FIX
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
         return response
     
     # Language middleware

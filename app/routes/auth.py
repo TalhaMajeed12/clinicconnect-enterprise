@@ -80,7 +80,7 @@ def login():
     return render_template('auth/login.html')
 
 # ============================================
-# CLINICIAN LOGIN (NEW)
+# CLINICIAN LOGIN
 # ============================================
 @auth_bp.route('/clinician/login', methods=['GET', 'POST'])
 def clinician_login():
@@ -204,23 +204,12 @@ def admin_login():
     return render_template('auth/admin_login.html')
 
 # ============================================
-# REGISTRATION - DISABLED
+# REGISTRATION - PATIENT
 # ============================================
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    flash('Patient self-registration is disabled. Please contact your clinician or admin.', 'warning')
-    return redirect(url_for('auth.login'))
-
-# ============================================
-# ADMIN REGISTRATION
-# ============================================
-@auth_bp.route('/admin/register', methods=['GET', 'POST'])
-def admin_register():
-    # Check if any admin already exists
-    existing_admin = User.query.filter_by(role='admin').first()
-    if existing_admin:
-        flash('Admin account already exists. Only one admin account is allowed.', 'danger')
-        return redirect(url_for('auth.admin_login'))
+    # Check if registration is disabled (can be configured)
+    # For now, allow registration
     
     if request.method == 'POST':
         try:
@@ -234,28 +223,28 @@ def admin_register():
             # Validation
             if not all([username, full_name, email, phone, password]):
                 flash('All fields are required', 'danger')
-                return render_template('auth/admin_register.html', form=request.form)
+                return render_template('auth/register.html', form=request.form)
             
             if password != confirm_password:
                 flash('Passwords do not match', 'danger')
-                return render_template('auth/admin_register.html', form=request.form)
+                return render_template('auth/register.html', form=request.form)
             
             if len(password) < 6:
                 flash('Password must be at least 6 characters', 'danger')
-                return render_template('auth/admin_register.html', form=request.form)
+                return render_template('auth/register.html', form=request.form)
             
             if User.query.filter_by(username=username).first():
                 flash('Username already exists', 'danger')
-                return render_template('auth/admin_register.html', form=request.form)
+                return render_template('auth/register.html', form=request.form)
             
             if User.query.filter_by(email=email).first():
                 flash('Email already registered', 'danger')
-                return render_template('auth/admin_register.html', form=request.form)
+                return render_template('auth/register.html', form=request.form)
             
-            # Create admin user
+            # Create user
             user = User(
                 username=username,
-                role='admin',
+                role='patient',
                 full_name=full_name,
                 email=email,
                 phone=phone
@@ -265,25 +254,23 @@ def admin_register():
             db.session.add(user)
             db.session.flush()
             
-            # Create admin clinician profile
-            clinician = ClinicianProfile(
-                user_id=user.id,
-                specialty='Administration',
-                consultation_fee=0
+            # Create patient profile
+            patient = PatientProfile(
+                user_id=user.id
             )
-            db.session.add(clinician)
+            db.session.add(patient)
             db.session.commit()
             
-            flash('Admin account created successfully! Please login.', 'success')
-            return redirect(url_for('auth.admin_login'))
+            flash('Registration successful! Please login.', 'success')
+            return redirect(url_for('auth.login'))
             
         except Exception as e:
             db.session.rollback()
-            print(f"Admin Registration Error: {str(e)}")
+            print(f"Registration Error: {str(e)}")
             flash(f'Error: {str(e)}', 'danger')
-            return render_template('auth/admin_register.html', form=request.form)
+            return render_template('auth/register.html', form=request.form)
     
-    return render_template('auth/admin_register.html')
+    return render_template('auth/register.html')
 
 # ============================================
 # LOGOUT (FIXED)
