@@ -43,7 +43,7 @@
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.patients') }}"><i class="fas fa-users"></i> Patients</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.clinicians') }}"><i class="fas fa-user-md"></i> Clinicians</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.appointments') }}"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.appointments') }}"><i class="fas fa-calendar-check"></i> Appointments</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.audit_logs') }}"><i class="fas fa-history"></i> Audit Logs</a></li>
                         {% elif session.get('role') == 'clinician' %}
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
@@ -53,7 +53,7 @@
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.history') }}"><i class="fas fa-history"></i> History</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.appointments') }}"><i class="fas fa-list"></i> My Appointments</a></li>
+                      
                         {% endif %}
                     {% endif %}
                 </ul>
