@@ -84,13 +84,12 @@ def login():
 # ============================================
 @auth_bp.route('/clinician/login', methods=['GET', 'POST'])
 def clinician_login():
-    # If user is already logged in as clinician, redirect to clinician dashboard
     if session.get('user_id'):
-    user = User.query.get(session['user_id'])
-    if user and user.role == 'clinician':
-        return redirect(url_for('clinician.dashboard'))
-    session.clear()
-    
+        user = User.query.get(session['user_id'])
+        if user and user.role == 'clinician':
+            return redirect(url_for('clinician.dashboard'))
+        session.clear()
+
     if request.method == 'POST':
         try:
             username = request.form.get('username')
@@ -144,13 +143,12 @@ def clinician_login():
 # ============================================
 @auth_bp.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
-    # If user is already logged in as admin, redirect to admin dashboard
     if session.get('user_id'):
-    user = User.query.get(session['user_id'])
-    if user and user.role == 'admin':
-        return redirect(url_for('admin.dashboard'))
-    session.clear()
-    
+        user = User.query.get(session['user_id'])
+        if user and user.role == 'admin':
+            return redirect(url_for('admin.dashboard'))
+        session.clear()
+
     if request.method == 'POST':
         try:
             username = request.form.get('username')
