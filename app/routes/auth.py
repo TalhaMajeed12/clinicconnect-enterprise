@@ -86,12 +86,10 @@ def login():
 def clinician_login():
     # If user is already logged in as clinician, redirect to clinician dashboard
     if session.get('user_id'):
-        user = User.query.get(session['user_id'])
-        if user and user.role == 'clinician':
-            return redirect(url_for('clinician.dashboard'))
-        elif user:
-            flash('You are already logged in as a different user.', 'warning')
-            return redirect_based_on_role(user.role)
+    user = User.query.get(session['user_id'])
+    if user and user.role == 'clinician':
+        return redirect(url_for('clinician.dashboard'))
+    session.clear()
     
     if request.method == 'POST':
         try:
@@ -148,12 +146,10 @@ def clinician_login():
 def admin_login():
     # If user is already logged in as admin, redirect to admin dashboard
     if session.get('user_id'):
-        user = User.query.get(session['user_id'])
-        if user and user.role == 'admin':
-            return redirect(url_for('admin.dashboard'))
-        elif user:
-            flash('You are already logged in as a different user.', 'warning')
-            return redirect_based_on_role(user.role)
+    user = User.query.get(session['user_id'])
+    if user and user.role == 'admin':
+        return redirect(url_for('admin.dashboard'))
+    session.clear()
     
     if request.method == 'POST':
         try:
