@@ -31,7 +31,7 @@
                         <h5 class="card-title mt-3">For Clinicians</h5>
                         <p class="card-text">Manage patients, track appointments, and provide care.</p>
                         {% if not session.get('user_id') %}
-                            <a href="{{ url_for('auth.login') }}" class="btn btn-success">Login</a>
+                            <a href="{{ url_for('auth.clinician_login') }}" class="btn btn-success">Clinician Login</a>
                         {% endif %}
                     </div>
                 </div>
