@@ -3,6 +3,7 @@ from app import db
 from app.models import Appointment, Payment, PatientProfile, AuditLog
 from app.utils.translations import t
 from datetime import datetime
+from decimal import Decimal
 import uuid
 
 payment_bp = Blueprint('payment', __name__)
@@ -19,10 +20,10 @@ def checkout(appointment_id):
         flash(t('Unauthorized'), 'danger')
         return redirect(url_for('patient.dashboard'))
     
-    total = appointment.clinician.consultation_fee if appointment.clinician else 0
+    total = appointment.clinician.consultation_fee if appointment.clinician else Decimal('0.00')
     return render_template('payment/checkout.html',
         appointment=appointment,
-        deposit=total * 0.25,
+        deposit=total * Decimal('0.25'),
         total=total
     )
 
@@ -47,8 +48,8 @@ def process():
     # Simulate payment processing
     transaction_id = f"TXN-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
     
-    fee = appointment.clinician.consultation_fee if appointment.clinician else 0
-    deposit = fee * 0.25
+    fee = appointment.clinician.consultation_fee if appointment.clinician else Decimal('0.00')
+    deposit = fee * Decimal('0.25')
     try:
         payment = Payment(
             appointment_id=appointment.id,

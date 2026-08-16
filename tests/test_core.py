@@ -118,6 +118,28 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Appointment.query.count(), 1)
 
+    def test_patient_can_open_checkout_and_record_demo_payment(self):
+        appointment = Appointment(
+            patient_id=self.patient.id,
+            clinician_id=self.clinician.id,
+            appointment_date=datetime.utcnow() + timedelta(days=1),
+            status='pending',
+        )
+        db.session.add(appointment)
+        db.session.commit()
+        self._session_as(self.patient_user)
+
+        checkout = self.client.get(f'/payment/checkout/{appointment.id}')
+        self.assertEqual(checkout.status_code, 200)
+        self.assertIn(b'PKR 500.00', checkout.data)
+
+        processed = self.client.post('/payment/process', data={
+            'appointment_id': appointment.id,
+        })
+        self.assertEqual(processed.status_code, 302)
+        self.assertIn(f'/payment/success/{appointment.id}', processed.location)
+        self.assertEqual(db.session.get(Appointment, appointment.id).status, 'confirmed')
+
     def test_inactive_clinician_cannot_login(self):
         self.clinician_user.is_active = False
         db.session.commit()
