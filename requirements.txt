@@ -4,12 +4,13 @@
 Flask==2.3.3
 Flask-SQLAlchemy==3.1.1
 Flask-Mail==0.9.1
-Flask-Login==0.6.2
+Flask-Login==0.6.3
 Flask-WTF==1.1.1
 Flask-Limiter==3.5.0
 Flask-Migrate==4.0.5
 Flask-Session==0.5.0
 Flask-CORS==4.0.0
+Werkzeug==2.3.8
 
 # ============================================
 # DATABASE DRIVERS
@@ -26,7 +27,7 @@ bcrypt==4.1.2
 python-dotenv==1.0.1
 python-jose==3.3.0
 passlib==1.7.4
-PyJWT==2.8.0  # ← ADD THIS
+PyJWT==2.8.0
 
 # ============================================
 # PRODUCTION SERVER
