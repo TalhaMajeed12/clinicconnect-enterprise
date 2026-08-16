@@ -336,6 +336,7 @@ def forgot_password():
                     user.id,
                 )
 
+        session.pop('_flashes', None)
         flash(
             'If that patient account can receive email, a reset link has been sent.',
             'info',
