@@ -5,6 +5,7 @@ from app.utils.auth import token_required
 from datetime import datetime, timedelta
 import jwt
 from sqlalchemy import text
+from app.extensions import limiter
 
 api_bp = Blueprint('api', __name__)
 
@@ -46,6 +47,7 @@ def health():
 # AUTH API
 # ============================================
 @api_bp.route('/auth/login', methods=['POST'])
+@limiter.limit('10 per minute')
 def api_login():
     data = request.get_json(silent=True) or {}
     identifier = data.get('identifier')

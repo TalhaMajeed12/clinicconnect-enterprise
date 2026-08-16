@@ -1,6 +1,7 @@
 from flask import Flask, render_template, session
 from flask_session import Session
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 import logging
 import os
 from logging.handlers import RotatingFileHandler
@@ -21,6 +22,7 @@ session_manager = Session()
 
 def create_app(config_name='default'):
     app = Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     
     # Load configuration
     app.config.from_object(config.get(config_name, config['default']))
@@ -79,7 +81,12 @@ def create_app(config_name='default'):
         app.config['SESSION_TYPE'] = 'filesystem'
     
     session_manager.init_app(app)
-    CORS(app)
+    CORS(app, resources={
+        r'/api/*': {
+            'origins': app.config.get('CORS_ALLOWED_ORIGINS', []),
+            'supports_credentials': False,
+        }
+    })
     
     # Rate Limiting - use memory if Redis not available
     if app.config.get('RATELIMIT_ENABLED', False):

@@ -95,6 +95,14 @@ class Config:
     # Languages
     DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE', 'en')
     SUPPORTED_LANGUAGES = os.environ.get('SUPPORTED_LANGUAGES', 'en,ur').split(',')
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip()
+        for origin in os.environ.get(
+            'CORS_ALLOWED_ORIGINS',
+            'https://clinicconnect-enterprise.onrender.com',
+        ).split(',')
+        if origin.strip()
+    ]
     PUBLIC_REGISTRATION_ENABLED = os.environ.get(
         'PUBLIC_REGISTRATION_ENABLED', 'False'
     ) == 'True'

@@ -201,6 +201,20 @@ class CoreFlowTests(unittest.TestCase):
         )
         self.assertIn('camera=()', response.headers['Permissions-Policy'])
 
+    def test_api_cors_rejects_untrusted_origins(self):
+        rejected = self.client.get('/api/health', headers={
+            'Origin': 'https://attacker.example',
+        })
+        self.assertIsNone(rejected.headers.get('Access-Control-Allow-Origin'))
+
+        allowed = self.client.get('/api/health', headers={
+            'Origin': 'https://clinicconnect-enterprise.onrender.com',
+        })
+        self.assertEqual(
+            allowed.headers.get('Access-Control-Allow-Origin'),
+            'https://clinicconnect-enterprise.onrender.com',
+        )
+
     def test_patient_api_cannot_list_all_patients(self):
         login = self.client.post('/api/auth/login', json={
             'identifier': 'patient@example.test', 'password': 'StrongPass123!'

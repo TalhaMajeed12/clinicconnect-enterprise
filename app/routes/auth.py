@@ -3,6 +3,7 @@ from app import db
 from app.models import User, PatientProfile, ClinicianProfile, AuditLog, LoginAttempt
 from datetime import datetime
 from flask_login import login_user, logout_user
+from app.extensions import limiter
 import traceback
 
 auth_bp = Blueprint('auth', __name__)
@@ -22,6 +23,7 @@ def redirect_based_on_role(role):
 # PATIENT LOGIN
 # ============================================
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute', methods=['POST'])
 def login():
     # If user is already logged in, redirect to appropriate dashboard
     if session.get('user_id'):
@@ -84,6 +86,7 @@ def login():
 # CLINICIAN LOGIN
 # ============================================
 @auth_bp.route('/clinician/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute', methods=['POST'])
 def clinician_login():
     if session.get('user_id'):
         user = User.query.get(session['user_id'])
@@ -144,6 +147,7 @@ def clinician_login():
 # ADMIN LOGIN
 # ============================================
 @auth_bp.route('/admin/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute', methods=['POST'])
 def admin_login():
     if session.get('user_id'):
         user = User.query.get(session['user_id'])
