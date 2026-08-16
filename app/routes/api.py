@@ -69,6 +69,11 @@ def api_login():
 
 @api_bp.route('/auth/register', methods=['POST'])
 def api_register():
+    if not current_app.config.get('PUBLIC_REGISTRATION_ENABLED', False):
+        return jsonify({
+            'error': 'Patient self-registration is disabled. Contact a clinician.'
+        }), 403
+
     data = request.get_json(silent=True) or {}
     
     email = (data.get('email') or '').strip()

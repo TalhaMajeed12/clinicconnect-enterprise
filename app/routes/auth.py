@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
 from app import db
 from app.models import User, PatientProfile, ClinicianProfile, AuditLog, LoginAttempt
 from datetime import datetime
@@ -204,8 +204,11 @@ def admin_login():
 # ============================================
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    # Check if registration is disabled (can be configured)
-    # For now, allow registration
+    if not current_app.config.get('PUBLIC_REGISTRATION_ENABLED', False):
+        if request.method == 'POST':
+            flash('Patient self-registration is disabled.', 'warning')
+            return render_template('auth/register.html'), 403
+        return render_template('auth/register.html')
     
     if request.method == 'POST':
         try:

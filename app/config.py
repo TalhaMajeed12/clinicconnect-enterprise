@@ -95,6 +95,9 @@ class Config:
     # Languages
     DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE', 'en')
     SUPPORTED_LANGUAGES = os.environ.get('SUPPORTED_LANGUAGES', 'en,ur').split(',')
+    PUBLIC_REGISTRATION_ENABLED = os.environ.get(
+        'PUBLIC_REGISTRATION_ENABLED', 'False'
+    ) == 'True'
     
     # Logging
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')

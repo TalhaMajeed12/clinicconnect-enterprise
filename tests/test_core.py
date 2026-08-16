@@ -176,13 +176,30 @@ class CoreFlowTests(unittest.TestCase):
         with self.client.session_transaction() as session:
             self.assertNotIn('user_id', session)
 
-    def test_public_api_cannot_register_privileged_role(self):
+    def test_public_registration_is_disabled(self):
         response = self.client.post('/api/auth/register', json={
             'email': 'new@example.test', 'phone': '5000',
             'password': 'StrongPass123!', 'full_name': 'New User', 'role': 'admin'
         })
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(User.find_by_identifier('new@example.test').role, 'patient')
+        self.assertEqual(response.status_code, 403)
+        self.assertIsNone(User.find_by_identifier('new@example.test'))
+
+        web_response = self.client.post('/auth/register', data={
+            'username': 'new', 'email': 'new@example.test', 'phone': '5000',
+            'password': 'StrongPass123!', 'confirm_password': 'StrongPass123!',
+            'full_name': 'New User',
+        })
+        self.assertEqual(web_response.status_code, 403)
+        self.assertIsNone(User.find_by_identifier('new@example.test'))
+
+    def test_security_headers_are_present(self):
+        response = self.client.get('/')
+        self.assertIn("default-src 'self'", response.headers['Content-Security-Policy'])
+        self.assertEqual(
+            response.headers['Referrer-Policy'],
+            'strict-origin-when-cross-origin',
+        )
+        self.assertIn('camera=()', response.headers['Permissions-Policy'])
 
     def test_patient_api_cannot_list_all_patients(self):
         login = self.client.post('/api/auth/login', json={
