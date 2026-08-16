@@ -1,7 +1,7 @@
-from flask_mail import Message
-from app import mail
 from flask import current_app
 from html import escape
+from email.message import EmailMessage
+import smtplib
 
 def send_email(subject, recipient, body_html):
     """Send an HTML email"""
@@ -14,14 +14,31 @@ def send_email(subject, recipient, body_html):
             print("❌ No sender email configured!")
             return False
         
-        msg = Message(
-            subject=subject,
-            sender=sender,
-            recipients=[recipient]
-        )
-        msg.html = body_html
-        
-        mail.send(msg)
+        username = current_app.config.get('MAIL_USERNAME')
+        password = current_app.config.get('MAIL_PASSWORD')
+        if not username or not password:
+            current_app.logger.warning('SMTP credentials are not configured')
+            return False
+
+        msg = EmailMessage()
+        msg['Subject'] = subject
+        msg['From'] = sender
+        msg['To'] = recipient
+        msg.set_content('Open this message in an HTML-capable email client.')
+        msg.add_alternative(body_html, subtype='html')
+
+        timeout = current_app.config.get('MAIL_TIMEOUT', 10)
+        with smtplib.SMTP(
+            current_app.config.get('MAIL_SERVER', 'smtp.gmail.com'),
+            current_app.config.get('MAIL_PORT', 587),
+            timeout=timeout,
+        ) as smtp:
+            smtp.ehlo()
+            if current_app.config.get('MAIL_USE_TLS', True):
+                smtp.starttls()
+                smtp.ehlo()
+            smtp.login(username, password)
+            smtp.send_message(msg)
         print(f"✅ Email sent successfully to {recipient}")
         return True
         
