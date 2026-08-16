@@ -1,1 +1,8 @@
- 
+{% extends "base.html" %}
+{% block title %}Medical History{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Medical history</h1>
+{% for visit in visits %}
+<article class="card shadow-sm mb-3"><div class="card-header d-flex justify-content-between"><strong>{{ visit.visit_date.strftime('%d %b %Y') }}</strong><span>{{ visit.clinician.user.full_name if visit.clinician and visit.clinician.user else 'Clinician' }}</span></div><div class="card-body"><dl class="row mb-0"><dt class="col-sm-3">Reason</dt><dd class="col-sm-9">{{ visit.chief_complaint or '—' }}</dd><dt class="col-sm-3">Diagnosis</dt><dd class="col-sm-9">{{ visit.primary_diagnosis or '—' }}</dd><dt class="col-sm-3">Treatment plan</dt><dd class="col-sm-9">{{ visit.treatment_plan or '—' }}</dd></dl>{% if visit.prescriptions %}<h2 class="h6 mt-3">Prescriptions</h2><ul>{% for item in visit.prescriptions %}<li>{{ item.drug_name }} — {{ item.dosage or '' }} {{ item.frequency or '' }} {{ item.duration or '' }}</li>{% endfor %}</ul>{% endif %}</div></article>
+{% else %}<div class="alert alert-info">No visits have been recorded yet.</div>{% endfor %}
+{% endblock %}

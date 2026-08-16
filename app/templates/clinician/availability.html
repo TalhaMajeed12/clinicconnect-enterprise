@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Availability{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Weekly availability</h1>
+<form method="POST" class="card card-body shadow-sm">
+    <div class="mb-3"><label class="form-label d-block">Working days</label>{% for day in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] %}<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="working_days" value="{{ day }}" id="{{ day }}" {% if day in (clinician.working_days or []) %}checked{% endif %}><label class="form-check-label" for="{{ day }}">{{ day|title }}</label></div>{% endfor %}</div>
+    <div class="row"><div class="col-md-6 mb-3"><label class="form-label">Start</label><input class="form-control" type="time" name="start_time" value="{{ (clinician.working_hours or {}).get('start','09:00') }}" required></div><div class="col-md-6 mb-3"><label class="form-label">End</label><input class="form-control" type="time" name="end_time" value="{{ (clinician.working_hours or {}).get('end','17:00') }}" required></div></div>
+    <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="is_available" id="is_available" {% if clinician.is_available %}checked{% endif %}><label class="form-check-label" for="is_available">Accept online bookings</label></div>
+    <button class="btn btn-primary" type="submit">Save availability</button>
+</form>
+{% endblock %}

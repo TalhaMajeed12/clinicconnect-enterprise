@@ -4,6 +4,7 @@ from app.models import User, PatientProfile, ClinicianProfile, Appointment, Visi
 from app.utils.auth import token_required
 from datetime import datetime, timedelta
 import jwt
+from sqlalchemy import text
 
 api_bp = Blueprint('api', __name__)
 
@@ -27,27 +28,32 @@ def check_session():
 @api_bp.route('/health')
 def health():
     """System health check"""
+    try:
+        db.session.execute(text('SELECT 1'))
+        database = 'connected'
+        status_code = 200
+    except Exception:
+        db.session.rollback()
+        database = 'unavailable'
+        status_code = 503
     return jsonify({
-        'status': 'healthy',
-        'session_active': 'user_id' in session,
+        'status': 'healthy' if status_code == 200 else 'degraded',
+        'database': database,
         'timestamp': datetime.utcnow().isoformat()
-    })
+    }), status_code
 
 # ============================================
 # AUTH API
 # ============================================
 @api_bp.route('/auth/login', methods=['POST'])
 def api_login():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     identifier = data.get('identifier')
     password = data.get('password')
     
-    user = User.query.filter(
-        (User._email == User.encrypt_field(identifier)) |
-        (User._phone == User.encrypt_field(identifier))
-    ).first()
+    user = User.find_by_identifier(identifier)
     
-    if user and user.check_password(password):
+    if user and user.is_active and password and user.check_password(password):
         token = jwt.encode(
             {'user_id': user.id, 'exp': datetime.utcnow() + timedelta(hours=24)},
             current_app.config['JWT_SECRET_KEY'],
@@ -63,16 +69,20 @@ def api_login():
 
 @api_bp.route('/auth/register', methods=['POST'])
 def api_register():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     
-    user = User(
-        username=data.get('email').split('@')[0],
-        role=data.get('role', 'patient')
-    )
+    email = (data.get('email') or '').strip()
+    phone = (data.get('phone') or '').strip()
+    password = data.get('password') or ''
+    if not email or not phone or len(password) < 8:
+        return jsonify({'error': 'Valid email, phone, and password are required'}), 400
+    if User.find_by_identifier(email) or User.find_by_identifier(phone):
+        return jsonify({'error': 'Account already exists'}), 409
+    user = User(username=email.split('@')[0], role='patient')
     user.full_name = data.get('full_name')
     user.email = data.get('email')
     user.phone = data.get('phone')
-    user.set_password(data.get('password'))
+    user.set_password(password)
     
     db.session.add(user)
     db.session.flush()
@@ -91,6 +101,8 @@ def api_register():
 @api_bp.route('/patients', methods=['GET'])
 @token_required
 def get_patients(current_user):
+    if current_user.role not in ('admin', 'clinician'):
+        return jsonify({'error': 'Forbidden'}), 403
     patients = PatientProfile.query.all()
     return jsonify({'patients': [p.to_dict() for p in patients]})
 
@@ -98,11 +110,17 @@ def get_patients(current_user):
 @token_required
 def get_patient(current_user, patient_id):
     patient = PatientProfile.query.get_or_404(patient_id)
+    if current_user.role == 'patient' and patient.user_id != current_user.id:
+        return jsonify({'error': 'Forbidden'}), 403
+    if current_user.role not in ('admin', 'clinician', 'patient'):
+        return jsonify({'error': 'Forbidden'}), 403
     return jsonify(patient.to_dict())
 
 @api_bp.route('/patients', methods=['POST'])
 @token_required
 def create_patient(current_user):
+    if current_user.role not in ('admin', 'clinician'):
+        return jsonify({'error': 'Forbidden'}), 403
     data = request.get_json()
     
     user = User(
@@ -149,6 +167,8 @@ def get_appointments(current_user):
 @api_bp.route('/appointments', methods=['POST'])
 @token_required
 def create_appointment(current_user):
+    if current_user.role != 'patient':
+        return jsonify({'error': 'Only patients can book appointments'}), 403
     data = request.get_json()
     
     patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
@@ -197,6 +217,8 @@ def get_visits(current_user):
 @api_bp.route('/visits', methods=['POST'])
 @token_required
 def create_visit(current_user):
+    if current_user.role != 'clinician':
+        return jsonify({'error': 'Only clinicians can create visits'}), 403
     data = request.get_json()
     
     patient = PatientProfile.query.get(data.get('patient_id'))
@@ -224,14 +246,18 @@ def get_payments(current_user):
     if current_user.role == 'patient':
         profile = PatientProfile.query.filter_by(user_id=current_user.id).first()
         payments = Payment.query.filter_by(patient_id=profile.id).all()
-    else:
+    elif current_user.role == 'admin':
         payments = Payment.query.all()
+    else:
+        return jsonify({'error': 'Forbidden'}), 403
     
     return jsonify({'payments': [p.to_dict() for p in payments]})
 
 @api_bp.route('/payments', methods=['POST'])
 @token_required
 def create_payment(current_user):
+    if current_user.role != 'patient':
+        return jsonify({'error': 'Only patients can create payments'}), 403
     data = request.get_json()
     
     appointment = Appointment.query.get(data.get('appointment_id'))

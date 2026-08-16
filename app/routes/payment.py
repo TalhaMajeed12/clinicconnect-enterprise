@@ -19,10 +19,11 @@ def checkout(appointment_id):
         flash(t('Unauthorized'), 'danger')
         return redirect(url_for('patient.dashboard'))
     
+    total = appointment.clinician.consultation_fee if appointment.clinician else 0
     return render_template('payment/checkout.html',
         appointment=appointment,
-        deposit=500,
-        total=2000
+        deposit=total * 0.25,
+        total=total
     )
 
 @payment_bp.route('/process', methods=['POST'])
@@ -33,27 +34,46 @@ def process():
     
     appointment_id = request.form.get('appointment_id')
     appointment = Appointment.query.get_or_404(appointment_id)
+    if appointment.patient_id != patient.id:
+        flash(t('Unauthorized'), 'danger')
+        return redirect(url_for('patient.dashboard'))
+    if appointment.status not in ('pending',):
+        flash(t('This appointment is not awaiting payment.'), 'warning')
+        return redirect(url_for('patient.appointments'))
+    if Payment.query.filter_by(appointment_id=appointment.id, payment_status='completed').first():
+        flash(t('Payment has already been recorded.'), 'warning')
+        return redirect(url_for('patient.appointments'))
     
     # Simulate payment processing
     transaction_id = f"TXN-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
     
-    payment = Payment(
-        appointment_id=appointment.id,
-        patient_id=patient.id,
-        amount=500,
-        payment_method='card',
-        transaction_id=transaction_id,
-        payment_status='completed'
-    )
-    db.session.add(payment)
-    
-    appointment.status = 'confirmed'
-    db.session.commit()
+    fee = appointment.clinician.consultation_fee if appointment.clinician else 0
+    deposit = fee * 0.25
+    try:
+        payment = Payment(
+            appointment_id=appointment.id,
+            patient_id=patient.id,
+            amount=deposit,
+            total_amount=fee,
+            payment_method='demo',
+            transaction_id=transaction_id,
+            payment_status='completed'
+        )
+        db.session.add(payment)
+        appointment.status = 'confirmed'
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     
     flash(t('Payment successful! Appointment confirmed.'), 'success')
     return redirect(url_for('payment.success', appointment_id=appointment.id))
 
 @payment_bp.route('/success/<int:appointment_id>')
 def success(appointment_id):
+    patient = PatientProfile.query.filter_by(user_id=session.get('user_id')).first()
     appointment = Appointment.query.get_or_404(appointment_id)
+    if not patient or appointment.patient_id != patient.id:
+        flash(t('Unauthorized'), 'danger')
+        return redirect(url_for('auth.login'))
     return render_template('payment/success.html', appointment=appointment)

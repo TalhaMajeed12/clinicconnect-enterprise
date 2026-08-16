@@ -15,9 +15,9 @@ def token_required(f):
             token = token.split(' ')[1]  # Bearer <token>
             data = jwt.decode(token, current_app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
             current_user = User.query.get(data['user_id'])
-            if not current_user:
+            if not current_user or not current_user.is_active:
                 return jsonify({'message': 'User not found!'}), 401
-        except:
+        except (IndexError, KeyError, jwt.PyJWTError, ValueError):
             return jsonify({'message': 'Token is invalid!'}), 401
         
         return f(current_user, *args, **kwargs)

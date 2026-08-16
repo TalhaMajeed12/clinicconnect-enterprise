@@ -1,1 +1,28 @@
- 
+{% extends "base.html" %}
+{% block title %}Book Appointment{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Book an appointment</h1>
+{% if clinicians %}
+<form method="POST" class="card card-body shadow-sm">
+    <div class="mb-3">
+        <label for="clinician_id" class="form-label">Clinician</label>
+        <select id="clinician_id" name="clinician_id" class="form-select" required>
+            <option value="">Choose a clinician</option>
+            {% for clinician in clinicians %}
+            <option value="{{ clinician.id }}">Dr. {{ clinician.user.full_name }} — {{ clinician.specialty }} (PKR {{ clinician.consultation_fee }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="appointment_date" class="form-label">Date and time</label>
+        <input id="appointment_date" name="appointment_date" type="datetime-local" class="form-control" required>
+        <div class="form-text">Your selection must fall within the clinician's working schedule.</div>
+    </div>
+    <div class="mb-3"><label for="reason" class="form-label">Reason</label><textarea id="reason" name="reason" class="form-control" rows="2" required></textarea></div>
+    <div class="mb-3"><label for="symptoms" class="form-label">Symptoms (optional)</label><textarea id="symptoms" name="symptoms" class="form-control" rows="2"></textarea></div>
+    <button class="btn btn-primary" type="submit">Continue to payment</button>
+</form>
+{% else %}
+<div class="alert alert-info">No clinicians are currently available for online booking.</div>
+{% endif %}
+{% endblock %}

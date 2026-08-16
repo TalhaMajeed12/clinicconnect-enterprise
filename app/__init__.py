@@ -1,35 +1,62 @@
-from flask import Flask, render_template, session, request
-from flask_sqlalchemy import SQLAlchemy
-from flask_mail import Mail
-from flask_migrate import Migrate
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from flask import Flask, render_template, session
 from flask_session import Session
 from flask_cors import CORS
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-from config import config
+from app.config import config
 import redis
 import traceback
 
-db = SQLAlchemy()
-mail = Mail()
-migrate = Migrate()
+from app.extensions import (
+    db,
+    mail,
+    migrate,
+    limiter,
+    login_manager,
+    csrf
+)
+
 session_manager = Session()
-limiter = Limiter(key_func=get_remote_address)
 
 def create_app(config_name='default'):
     app = Flask(__name__)
     
     # Load configuration
     app.config.from_object(config.get(config_name, config['default']))
+
+    if config_name == 'production':
+        missing = [name for name in ('DATABASE_URL', 'SECRET_KEY', 'ENCRYPTION_KEY', 'JWT_SECRET_KEY')
+                   if not os.environ.get(name)]
+        if missing:
+            raise RuntimeError(f"Missing required production settings: {', '.join(missing)}")
     
-    # Initialize extensions
+    # Initialize extensions once.
     db.init_app(app)
     mail.init_app(app)
     migrate.init_app(app, db)
-    
+    login_manager.init_app(app)
+
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models import User
+        try:
+            return db.session.get(User, int(user_id))
+        except (TypeError, ValueError):
+            return None
+
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        from flask import redirect, url_for
+        if session.get('role') == 'admin':
+            return redirect(url_for('auth.admin_login'))
+        if session.get('role') == 'clinician':
+            return redirect(url_for('auth.clinician_login'))
+        return redirect(url_for('auth.login'))
+
+    csrf.init_app(app)
+
     # Redis session - with better error handling
     if app.config.get('REDIS_URL'):
         try:
@@ -42,10 +69,10 @@ def create_app(config_name='default'):
             )
             # Test connection
             app.config['SESSION_REDIS'].ping()
-            print("✅ Redis connected successfully!")
+            print("Redis connected successfully!")
         except Exception as e:
-            print(f"⚠️ Redis connection failed: {e}")
-            print("⚠️ Falling back to filesystem sessions")
+            print(f"Redis connection failed: {e}")
+            print("Falling back to filesystem sessions")
             app.config['SESSION_TYPE'] = 'filesystem'
             app.config['SESSION_REDIS'] = None
     else:
@@ -86,6 +113,7 @@ def create_app(config_name='default'):
     from app.routes.appointments import appointments_bp
     from app.routes.payment import payment_bp
     from app.routes.api import api_bp
+    csrf.exempt(api_bp)
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -112,7 +140,7 @@ def create_app(config_name='default'):
         response.headers['X-XSS-Protection'] = '1; mode=block'
         
         # Cache prevention - UNIVERSAL FIX
-        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, private'
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
         
@@ -124,62 +152,6 @@ def create_app(config_name='default'):
         lang = session.get('language')
         if not lang:
             session['language'] = app.config.get('DEFAULT_LANGUAGE', 'en')
-    
-    # ============================================
-    # CREATE DATABASE TABLES ON STARTUP
-    # ============================================
-    with app.app_context():
-        try:
-            # Import all models to ensure they're registered
-            from app.models import (
-                User, PatientProfile, ClinicianProfile, 
-                Appointment, Payment, AuditLog, 
-                Visit, Prescription, Attendance,
-                OtpVerification, LoginAttempt, SystemSetting
-            )
-            
-            # Create all tables
-            db.create_all()
-            app.logger.info("✅ Database tables verified/created successfully")
-            print("✅ Database tables verified/created successfully")
-            
-            # Create admin user if it doesn't exist
-            admin = User.query.filter_by(username='admin').first()
-            if not admin:
-                admin = User(
-                    username='admin',
-                    role='admin',
-                    full_name='System Administrator',
-                    email='admin@clinicconnect.com',
-                    phone='1234567890'
-                )
-                admin.set_password('admin123')
-                db.session.add(admin)
-                db.session.flush()
-                app.logger.info("✅ Admin user created")
-                print("✅ Admin user created")
-                
-                # Create admin clinician profile
-                admin_clinician = ClinicianProfile.query.filter_by(user_id=admin.id).first()
-                if not admin_clinician:
-                    admin_clinician = ClinicianProfile(
-                        user_id=admin.id,
-                        specialty='Administration',
-                        consultation_fee=0
-                    )
-                    db.session.add(admin_clinician)
-                    app.logger.info("✅ Admin clinician profile created")
-                    print("✅ Admin clinician profile created")
-                
-                db.session.commit()
-                app.logger.info("✅ Admin setup complete (username: admin, password: admin123)")
-                print("✅ Admin setup complete (username: admin, password: admin123)")
-            
-        except Exception as e:
-            app.logger.error(f"❌ Database initialization error: {str(e)}")
-            app.logger.error(traceback.format_exc())
-            print(f"❌ Database initialization error: {str(e)}")
-            print(traceback.format_exc())
     
     return app
 
@@ -202,7 +174,7 @@ def setup_logging(app):
         app.logger.setLevel(logging.INFO)
         app.logger.info(f'{app.config["APP_NAME"]} v{app.config["APP_VERSION"]} started')
     except Exception as e:
-        print(f"⚠️ Logging setup warning: {e}")
+        print(f"Logging setup warning: {e}")
 
 def register_error_handlers(app):
     @app.errorhandler(404)

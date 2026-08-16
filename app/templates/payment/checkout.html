@@ -16,11 +16,8 @@
                 <hr>
                 <form method="POST" action="{{ url_for('payment.process') }}">
                     <input type="hidden" name="appointment_id" value="{{ appointment.id }}">
-                    <div class="mb-3">
-                        <label class="form-label">Card Number</label>
-                        <input type="text" name="card_number" class="form-control" placeholder="4242 4242 4242 4242" required>
-                    </div>
-                    <button type="submit" class="btn btn-success w-100">Pay PKR {{ deposit }}</button>
+                    <div class="alert alert-warning">FYP demo mode: this records a test payment only. No card or bank transaction is processed.</div>
+                    <button type="submit" class="btn btn-success w-100">Record demo payment of PKR {{ deposit }}</button>
                 </form>
             </div>
         </div>

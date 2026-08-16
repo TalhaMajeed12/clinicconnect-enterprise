@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from app import db
 from app.models import User, PatientProfile, ClinicianProfile, AuditLog, LoginAttempt
 from datetime import datetime
+from flask_login import login_user, logout_user
 import traceback
 
 auth_bp = Blueprint('auth', __name__)
@@ -38,9 +39,7 @@ def login():
                 return render_template('auth/login.html')
             
             # Find user by email or phone
-            user = User.query.filter(
-                (User.email == identifier) | (User.phone == identifier)
-            ).first()
+            user = User.find_by_identifier(identifier)
             
             if not user:
                 flash('Invalid email/phone or password', 'danger')
@@ -64,8 +63,10 @@ def login():
             session['username'] = user.username
             session['full_name'] = user.full_name
             session['email'] = user.email
+            login_user(user)
             
             user.last_login = datetime.utcnow()
+            db.session.add(AuditLog(user_id=user.id, action='login', resource_type='authentication'))
             db.session.commit()
             
             flash(f'Welcome back, {user.full_name}!', 'success')
@@ -86,9 +87,8 @@ def login():
 def clinician_login():
     if session.get('user_id'):
         user = User.query.get(session['user_id'])
-        if user and user.role == 'clinician':
-            return redirect(url_for('clinician.dashboard'))
-        session.clear()
+        if user:
+            return redirect_based_on_role(user.role)
 
     if request.method == 'POST':
         try:
@@ -123,12 +123,14 @@ def clinician_login():
             session['username'] = user.username
             session['full_name'] = user.full_name
             session['email'] = user.email
+            login_user(user)
             
             user.last_login = datetime.utcnow()
+            db.session.add(AuditLog(user_id=user.id, action='login', resource_type='authentication'))
             db.session.commit()
             
             flash(f'Welcome back, Dr. {user.full_name}!', 'success')
-            return redirect(url_for('clinician.dashboard'))
+            return redirect_based_on_role(user.role)
             
         except Exception as e:
             print(f"Clinician Login Error: {str(e)}")
@@ -145,10 +147,8 @@ def clinician_login():
 def admin_login():
     if session.get('user_id'):
         user = User.query.get(session['user_id'])
-        if user and user.role == 'admin':
-            return redirect(url_for('admin.dashboard'))
-        session.clear()
-
+        if user:
+            return redirect_based_on_role(user.role)
     if request.method == 'POST':
         try:
             username = request.form.get('username')
@@ -182,12 +182,14 @@ def admin_login():
             session['username'] = user.username
             session['full_name'] = user.full_name
             session['email'] = user.email
+            login_user(user)
             
             user.last_login = datetime.utcnow()
+            db.session.add(AuditLog(user_id=user.id, action='login', resource_type='authentication'))
             db.session.commit()
             
             flash('Admin login successful!', 'success')
-            return redirect(url_for('admin.dashboard'))
+            return redirect_based_on_role(user.role)
             
         except Exception as e:
             print(f"Admin Login Error: {str(e)}")
@@ -231,7 +233,7 @@ def register():
                 flash('Username already exists', 'danger')
                 return render_template('auth/register.html', form=request.form)
             
-            if User.query.filter_by(email=email).first():
+            if User.find_by_identifier(email) or User.find_by_identifier(phone):
                 flash('Email already registered', 'danger')
                 return render_template('auth/register.html', form=request.form)
             
@@ -273,7 +275,7 @@ def register():
 def logout():
     # Get user info before clearing session
     role = session.get('role')
-    username = session.get('username')
+    logout_user()
     
     # Clear the session
     session.clear()

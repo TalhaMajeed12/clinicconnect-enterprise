@@ -128,7 +128,8 @@ function toggleAttendance() {
     fetch('/clinician/toggle_attendance', {
         method: 'POST',
         headers: {
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfToken
         }
     })
     .then(response => response.json())
