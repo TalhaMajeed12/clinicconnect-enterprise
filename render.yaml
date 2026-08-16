@@ -24,6 +24,10 @@ services:
         sync: false
       - key: MAIL_DEFAULT_SENDER
         sync: false
+      - key: EMAIL_PROVIDER
+        value: brevo
+      - key: BREVO_API_KEY
+        sync: false
       - key: WTF_CSRF_ENABLED
         value: "True"
       - key: SESSION_COOKIE_SECURE

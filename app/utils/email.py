@@ -1,7 +1,44 @@
 from flask import current_app
 from html import escape
 from email.message import EmailMessage
+from email.utils import parseaddr
+import json
 import smtplib
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+
+BREVO_EMAIL_URL = 'https://api.brevo.com/v3/smtp/email'
+
+
+def _send_with_brevo(subject, recipient, body_html, sender, api_key, timeout):
+    """Send an email through Brevo's HTTPS transactional email API."""
+    sender_name, sender_email = parseaddr(sender)
+    if not sender_email:
+        current_app.logger.warning('A valid MAIL_DEFAULT_SENDER is required for Brevo')
+        return False
+
+    payload = {
+        'sender': {
+            'name': sender_name or 'ClinicConnect',
+            'email': sender_email,
+        },
+        'to': [{'email': recipient}],
+        'subject': subject,
+        'htmlContent': body_html,
+    }
+    request = Request(
+        BREVO_EMAIL_URL,
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'accept': 'application/json',
+            'api-key': api_key,
+            'content-type': 'application/json',
+        },
+        method='POST',
+    )
+    with urlopen(request, timeout=timeout) as response:
+        return response.status == 201
 
 def send_email(subject, recipient, body_html):
     """Send an HTML email"""
@@ -11,7 +48,25 @@ def send_email(subject, recipient, body_html):
             sender = current_app.config.get('MAIL_USERNAME')
             
         if not sender:
-            print("❌ No sender email configured!")
+            current_app.logger.warning('No sender email is configured')
+            return False
+
+        timeout = current_app.config.get('MAIL_TIMEOUT', 10)
+        provider = current_app.config.get('EMAIL_PROVIDER', 'smtp')
+        if provider == 'brevo':
+            api_key = current_app.config.get('BREVO_API_KEY')
+            if not api_key:
+                current_app.logger.warning('BREVO_API_KEY is not configured')
+                return False
+            delivered = _send_with_brevo(
+                subject, recipient, body_html, sender, api_key, timeout
+            )
+            if delivered:
+                current_app.logger.info('Email accepted by Brevo for delivery')
+            return delivered
+
+        if provider != 'smtp':
+            current_app.logger.warning('Unsupported email provider: %s', provider)
             return False
         
         username = current_app.config.get('MAIL_USERNAME')
@@ -27,7 +82,6 @@ def send_email(subject, recipient, body_html):
         msg.set_content('Open this message in an HTML-capable email client.')
         msg.add_alternative(body_html, subtype='html')
 
-        timeout = current_app.config.get('MAIL_TIMEOUT', 10)
         with smtplib.SMTP(
             current_app.config.get('MAIL_SERVER', 'smtp.gmail.com'),
             current_app.config.get('MAIL_PORT', 587),
@@ -39,11 +93,19 @@ def send_email(subject, recipient, body_html):
                 smtp.ehlo()
             smtp.login(username, password)
             smtp.send_message(msg)
-        print(f"✅ Email sent successfully to {recipient}")
+        current_app.logger.info('Email sent successfully over SMTP')
         return True
-        
-    except Exception as e:
-        print(f"❌ Failed to send email: {str(e)}")
+
+    except HTTPError as exc:
+        current_app.logger.warning(
+            'Email API rejected the request with status %s', exc.code
+        )
+        return False
+    except (URLError, OSError, smtplib.SMTPException) as exc:
+        current_app.logger.warning('Email delivery failed: %s', exc)
+        return False
+    except Exception:
+        current_app.logger.exception('Unexpected email delivery failure')
         return False
 
 

@@ -80,6 +80,8 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
     MAIL_TIMEOUT = int(os.environ.get('MAIL_TIMEOUT', 10))
+    EMAIL_PROVIDER = os.environ.get('EMAIL_PROVIDER', 'smtp').strip().lower()
+    BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
     
     # JWT
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or secrets.token_hex(32)

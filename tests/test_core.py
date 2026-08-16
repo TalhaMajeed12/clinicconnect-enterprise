@@ -1,5 +1,6 @@
 import unittest
 import re
+import json
 from unittest.mock import patch
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
@@ -233,6 +234,31 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'If that patient account can receive email', response.data)
         send_reset.assert_not_called()
+
+    @patch('app.utils.email.urlopen')
+    def test_brevo_email_transport_uses_https_api(self, open_url):
+        from app.utils.email import send_email
+
+        response = open_url.return_value.__enter__.return_value
+        response.status = 201
+        self.app.config.update(
+            EMAIL_PROVIDER='brevo',
+            BREVO_API_KEY='test-api-key',
+            MAIL_DEFAULT_SENDER='ClinicConnect <verified@example.test>',
+        )
+
+        with self.app.app_context():
+            delivered = send_email(
+                'Reset password', 'patient@example.test', '<p>Reset</p>'
+            )
+
+        self.assertTrue(delivered)
+        request = open_url.call_args.args[0]
+        self.assertEqual(request.full_url, 'https://api.brevo.com/v3/smtp/email')
+        self.assertEqual(request.headers['Api-key'], 'test-api-key')
+        payload = json.loads(request.data.decode('utf-8'))
+        self.assertEqual(payload['to'][0]['email'], 'patient@example.test')
+        self.assertNotIn('test-api-key', request.data.decode('utf-8'))
 
     def test_api_cors_rejects_untrusted_origins(self):
         rejected = self.client.get('/api/health', headers={
