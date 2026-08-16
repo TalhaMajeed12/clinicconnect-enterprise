@@ -52,6 +52,35 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(self.client.get('/admin/dashboard').status_code, 302)
         self.assertEqual(self.client.get('/clinician/dashboard').status_code, 302)
 
+    def test_admin_can_add_clinician_with_required_contact_details(self):
+        self._session_as(self.admin)
+        response = self.client.post('/admin/add-clinician', data={
+            'username': 'newdoctor',
+            'password': 'StrongPass123!',
+            'full_name': 'New Doctor',
+            'email': 'newdoctor@example.test',
+            'phone': '5550100',
+            'specialty': 'Cardiology',
+            'license_number': 'LIC-100',
+            'years_experience': '5',
+            'consultation_fee': '2500',
+        })
+        self.assertEqual(response.status_code, 302)
+        created = User.query.filter_by(username='newdoctor').one()
+        self.assertEqual(created.clinician_profile.specialty, 'Cardiology')
+
+    def test_add_clinician_explains_missing_required_contact(self):
+        self._session_as(self.admin)
+        response = self.client.post('/admin/add-clinician', data={
+            'username': 'newdoctor',
+            'password': 'StrongPass123!',
+            'full_name': 'New Doctor',
+            'specialty': 'Cardiology',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Email is required.', response.data)
+        self.assertIsNone(User.query.filter_by(username='newdoctor').first())
+
     def test_encrypted_identifier_login_and_role_logout(self):
         response = self.client.post('/auth/login', data={
             'identifier': 'PATIENT@EXAMPLE.TEST', 'password': 'StrongPass123!'

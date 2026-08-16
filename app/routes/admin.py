@@ -195,6 +195,14 @@ def add_clinician():
                 flash('Password is required.', 'danger')
                 return render_template('admin/add_clinician.html')
 
+            if not email:
+                flash('Email is required.', 'danger')
+                return render_template('admin/add_clinician.html')
+
+            if not phone:
+                flash('Phone is required.', 'danger')
+                return render_template('admin/add_clinician.html')
+
             if len(password) < 8:
                 flash(
                     'Password must be at least 8 characters long.',
@@ -211,6 +219,14 @@ def add_clinician():
 
             if existing_user:
                 flash('Username already exists.', 'danger')
+                return render_template('admin/add_clinician.html')
+
+            if User.find_by_identifier(email):
+                flash('Email already exists.', 'danger')
+                return render_template('admin/add_clinician.html')
+
+            if User.find_by_identifier(phone):
+                flash('Phone already exists.', 'danger')
                 return render_template('admin/add_clinician.html')
 
             # ----------------------------
@@ -257,8 +273,8 @@ def add_clinician():
                 username=username,
                 role='clinician',
                 full_name=full_name,
-                email=email or None,
-                phone=phone or None
+                email=email,
+                phone=phone
             )
 
             user.set_password(password)
@@ -278,6 +294,7 @@ def add_clinician():
             )
 
             db.session.add(clinician)
+            db.session.flush()
             db.session.add(AuditLog(user_id=session.get('user_id'), action='clinician_created',
                                     resource_type='clinician', resource_id=clinician.id))
             db.session.commit()

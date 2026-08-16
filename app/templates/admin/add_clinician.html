@@ -22,7 +22,7 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Username *</label>
-                            <input type="text" class="form-control" name="username" required>
+                            <input type="text" class="form-control" name="username" value="{{ request.form.get('username', '') }}" required>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -37,13 +37,13 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Full Name *</label>
-                            <input type="text" class="form-control" name="full_name" required>
+                            <input type="text" class="form-control" name="full_name" value="{{ request.form.get('full_name', '') }}" required>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email">
+                            <label class="form-label">Email *</label>
+                            <input type="email" class="form-control" name="email" value="{{ request.form.get('email', '') }}" required>
                         </div>
                     </div>
                 </div>
@@ -51,14 +51,14 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Phone</label>
-                            <input type="text" class="form-control" name="phone">
+                            <label class="form-label">Phone *</label>
+                            <input type="text" class="form-control" name="phone" value="{{ request.form.get('phone', '') }}" required>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Specialty *</label>
-                            <input type="text" class="form-control" name="specialty" required>
+                            <input type="text" class="form-control" name="specialty" value="{{ request.form.get('specialty', '') }}" required>
                         </div>
                     </div>
                 </div>
@@ -67,13 +67,13 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">License Number</label>
-                            <input type="text" class="form-control" name="license_number">
+                            <input type="text" class="form-control" name="license_number" value="{{ request.form.get('license_number', '') }}">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Years Experience</label>
-                            <input type="number" class="form-control" name="years_experience" value="0">
+                            <input type="number" class="form-control" name="years_experience" value="{{ request.form.get('years_experience', '0') }}">
                         </div>
                     </div>
                 </div>
@@ -82,7 +82,7 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Consultation Fee (PKR) *</label>
-                            <input type="number" step="0.01" class="form-control" name="consultation_fee" id="fee" value="2000" required>
+                            <input type="number" step="0.01" class="form-control" name="consultation_fee" id="fee" value="{{ request.form.get('consultation_fee', '2000') }}" required>
                             <small class="text-muted">Pre-payment = 25% of fee (4:1 ratio)</small>
                         </div>
                     </div>
