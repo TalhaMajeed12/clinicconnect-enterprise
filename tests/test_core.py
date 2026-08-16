@@ -1,4 +1,5 @@
 import unittest
+import re
 from datetime import datetime, timedelta
 
 from app import create_app
@@ -139,6 +140,31 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(processed.status_code, 302)
         self.assertIn(f'/payment/success/{appointment.id}', processed.location)
         self.assertEqual(db.session.get(Appointment, appointment.id).status, 'confirmed')
+
+    def test_clinician_can_update_appointment_status_with_csrf_enabled(self):
+        appointment = Appointment(
+            patient_id=self.patient.id,
+            clinician_id=self.clinician.id,
+            appointment_date=datetime.utcnow() + timedelta(days=1),
+            status='confirmed',
+        )
+        db.session.add(appointment)
+        db.session.commit()
+        self._session_as(self.clinician_user)
+        self.app.config['WTF_CSRF_ENABLED'] = True
+
+        page = self.client.get('/clinician/appointments')
+        token_match = re.search(rb"const csrfToken = '([^']+)'", page.data)
+        self.assertIsNotNone(token_match)
+        response = self.client.post(
+            f'/clinician/appointment/{appointment.id}/update',
+            json={'status': 'completed'},
+            headers={'X-CSRFToken': token_match.group(1).decode()},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()['success'])
+        self.assertEqual(db.session.get(Appointment, appointment.id).status, 'completed')
 
     def test_inactive_clinician_cannot_login(self):
         self.clinician_user.is_active = False
