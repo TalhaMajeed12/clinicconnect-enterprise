@@ -1,10 +1,15 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
 from app import db
-from app.models import User, PatientProfile, ClinicianProfile, AuditLog, LoginAttempt
-from datetime import datetime
+from app.models import (User, PatientProfile, ClinicianProfile, AuditLog,
+                        LoginAttempt, PasswordResetToken)
+from datetime import datetime, timedelta
 from flask_login import login_user, logout_user
 from app.extensions import limiter
 import traceback
+import hashlib
+import secrets
+
+from app.utils.email import send_password_reset_link
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -297,6 +302,85 @@ def logout():
     else:
         flash('Logged out successfully.', 'success')
         return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit('5 per hour', methods=['POST'])
+def forgot_password():
+    if request.method == 'POST':
+        identifier = (request.form.get('identifier') or '').strip()
+        user = User.find_by_identifier(identifier) if identifier else None
+
+        if user and user.role == 'patient' and user.is_active and user.email:
+            raw_token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+            PasswordResetToken.query.filter_by(
+                user_id=user.id, used_at=None
+            ).update({'used_at': datetime.utcnow()})
+            reset_record = PasswordResetToken(
+                user_id=user.id,
+                token_hash=token_hash,
+                expires_at=datetime.utcnow() + timedelta(minutes=30),
+                requester_ip=request.remote_addr,
+            )
+            db.session.add(reset_record)
+            reset_url = url_for(
+                'auth.reset_password', token=raw_token, _external=True
+            )
+            if send_password_reset_link(user.email, reset_url):
+                db.session.commit()
+            else:
+                db.session.rollback()
+                current_app.logger.warning(
+                    'Password reset email delivery failed for user_id=%s',
+                    user.id,
+                )
+
+        flash(
+            'If that patient account can receive email, a reset link has been sent.',
+            'info',
+        )
+        return redirect(url_for('auth.login'))
+
+    return render_template('auth/forgot_password.html')
+
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+@limiter.limit('10 per hour')
+def reset_password(token):
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    reset_record = PasswordResetToken.query.filter_by(
+        token_hash=token_hash,
+        used_at=None,
+    ).first()
+    if not reset_record or not reset_record.is_valid:
+        flash('This password reset link is invalid or expired.', 'danger')
+        return redirect(url_for('auth.forgot_password'))
+
+    if request.method == 'POST':
+        password = request.form.get('password') or ''
+        confirmation = request.form.get('confirm_password') or ''
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'danger')
+            return render_template('auth/reset_password.html')
+        if password != confirmation:
+            flash('Passwords do not match.', 'danger')
+            return render_template('auth/reset_password.html')
+
+        reset_record.user.set_password(password)
+        reset_record.used_at = datetime.utcnow()
+        db.session.add(AuditLog(
+            user_id=reset_record.user_id,
+            action='password_reset',
+            resource_type='authentication',
+            ip_address=request.remote_addr,
+        ))
+        db.session.commit()
+        session.clear()
+        flash('Password reset successful. Please log in.', 'success')
+        return redirect(url_for('auth.login'))
+
+    return render_template('auth/reset_password.html')
 
 # ============================================
 # CHANGE LANGUAGE

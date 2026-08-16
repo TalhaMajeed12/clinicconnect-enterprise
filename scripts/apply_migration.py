@@ -12,7 +12,10 @@ from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
 
 
-APPROVED_MIGRATIONS = {'001_add_clinician_time_off.sql'}
+APPROVED_MIGRATIONS = {
+    '001_add_clinician_time_off.sql',
+    '002_add_password_reset_tokens.sql',
+}
 
 
 def main():

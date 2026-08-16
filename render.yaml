@@ -18,6 +18,12 @@ services:
         generateValue: true
       - key: WTF_CSRF_SECRET_KEY
         generateValue: true
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_DEFAULT_SENDER
+        sync: false
       - key: WTF_CSRF_ENABLED
         value: "True"
       - key: SESSION_COOKIE_SECURE

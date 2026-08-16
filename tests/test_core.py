@@ -1,11 +1,13 @@
 import unittest
 import re
+from unittest.mock import patch
+from urllib.parse import urlparse
 from datetime import datetime, timedelta
 
 from app import create_app
 from app.extensions import db
 from app.models import (Appointment, ClinicianProfile, ClinicianTimeOff,
-                        PatientProfile, User)
+                        PasswordResetToken, PatientProfile, User)
 
 
 class CoreFlowTests(unittest.TestCase):
@@ -200,6 +202,37 @@ class CoreFlowTests(unittest.TestCase):
             'strict-origin-when-cross-origin',
         )
         self.assertIn('camera=()', response.headers['Permissions-Policy'])
+
+    @patch('app.routes.auth.send_password_reset_link', return_value=True)
+    def test_patient_password_reset_is_single_use(self, send_reset):
+        response = self.client.post('/auth/forgot-password', data={
+            'identifier': 'patient@example.test',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(send_reset.call_count, 1)
+        self.assertEqual(PasswordResetToken.query.count(), 1)
+
+        reset_url = send_reset.call_args.args[1]
+        reset_path = urlparse(reset_url).path
+        reset = self.client.post(reset_path, data={
+            'password': 'ChangedPass123!',
+            'confirm_password': 'ChangedPass123!',
+        })
+        self.assertEqual(reset.status_code, 302)
+        self.assertTrue(self.patient_user.check_password('ChangedPass123!'))
+
+        reused = self.client.get(reset_path)
+        self.assertEqual(reused.status_code, 302)
+        self.assertIn('/auth/forgot-password', reused.location)
+
+    @patch('app.routes.auth.send_password_reset_link', return_value=True)
+    def test_password_reset_does_not_reveal_unknown_accounts(self, send_reset):
+        response = self.client.post('/auth/forgot-password', data={
+            'identifier': 'unknown@example.test',
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'If that patient account can receive email', response.data)
+        send_reset.assert_not_called()
 
     def test_api_cors_rejects_untrusted_origins(self):
         rejected = self.client.get('/api/health', headers={

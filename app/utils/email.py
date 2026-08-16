@@ -1,6 +1,7 @@
 from flask_mail import Message
 from app import mail
 from flask import current_app
+from html import escape
 
 def send_email(subject, recipient, body_html):
     """Send an HTML email"""
@@ -151,3 +152,21 @@ def send_password_reset_email(recipient, otp_code):
     """
     
     return send_email(subject, recipient, body_html) 
+
+
+def send_password_reset_link(recipient, reset_url):
+    """Send a single-use password reset link without logging its token."""
+    safe_url = escape(reset_url, quote=True)
+    body_html = f"""
+    <!DOCTYPE html>
+    <html><body style="font-family: Arial, sans-serif;">
+      <div style="max-width: 600px; margin: auto; padding: 20px;">
+        <h2>ClinicConnect password reset</h2>
+        <p>A password reset was requested for your account.</p>
+        <p><a href="{safe_url}">Reset your password</a></p>
+        <p>This single-use link expires in 30 minutes.</p>
+        <p>If you did not request this, ignore this email.</p>
+      </div>
+    </body></html>
+    """
+    return send_email('ClinicConnect - Reset your password', recipient, body_html)

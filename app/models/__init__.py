@@ -8,6 +8,7 @@ from .audit import AuditLog, LoginAttempt, OtpVerification
 from .notification import Notification
 from .system import SystemSetting, Attendance
 from .time_off import ClinicianTimeOff
+from .password_reset import PasswordResetToken
 
 __all__ = [
     "User",
@@ -24,4 +25,5 @@ __all__ = [
     "SystemSetting",
     "Attendance",
     "ClinicianTimeOff",
+    "PasswordResetToken",
 ]
