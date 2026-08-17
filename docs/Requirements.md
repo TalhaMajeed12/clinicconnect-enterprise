@@ -1,87 +1,77 @@
-# Requirements
+# Requirements and Scope
 
-## Functional Requirements
+This document describes the implemented ClinicConnect Enterprise v3.0 FYP scope. Items under Future Work are not claimed as production features.
 
-### Authentication
-- User login
-- User logout
-- Forgot password
-- Password reset
-- OTP verification
-- Role-based access control
+## Functional requirements
 
-### Organization Management
-- Manage organizations
-- Manage branches
-- Configure branch settings
-- Configure working hours
+### Authentication and security
 
-### User Management
-- Create users
-- Update users
-- Disable users
-- Assign roles
+- Admin, clinician, and patient login/logout
+- Role-based route protection and inactive-account enforcement
+- Hashed passwords and encrypted sensitive profile fields
+- Single-use patient password-reset links delivered by email
+- CSRF protection, secure production cookies, rate limiting, and security headers
 
-### Patient Management
-- Register patient
-- Update patient profile
-- View patient history
-- Manage emergency contacts
-- Upload patient documents
+### Administration
 
-### Patient Portal
-- Login
-- View profile
-- View appointments
-- View prescriptions
-- Download medical documents
+- Dashboard totals for patients, clinicians, appointments, and recorded revenue
+- Create, view, edit, activate, and deactivate clinicians
+- View and search patients and their retained history
+- View appointments and audit logs
 
-### Appointment Management
-- Book appointment
-- Reschedule appointment
-- Cancel appointment
-- Check-in patient
-- Manage appointment status
+### Clinician portal
 
-### Consultation
-- Record consultation
-- Record diagnosis
-- Record treatment plan
-- Record follow-up
+- Dashboard and relevant patient list/folders
+- Create patient accounts through an authorized workflow
+- Record visits, diagnoses, treatment plans, and prescriptions
+- View appointments and update supported statuses
+- Configure weekly working hours and availability
+- Record full-day or partial-day time off
 
-### Prescription
-- Create prescription
-- Manage prescription items
-- Print prescription
+### Patient portal
 
-### Billing
-- Generate invoice
-- Record payment
-- Print receipt
+- Dashboard, appointments, medical history, and prescriptions
+- Book an active, available clinician
+- Cancel an eligible future appointment
+- Record an explicitly labelled FYP demonstration payment
 
-### Notifications
-- Email notifications
-- SMS-ready architecture
-- Appointment reminders
-- Password reset notifications
+### Scheduling rules
 
-### Reporting
-- Patient reports
-- Appointment reports
-- Revenue reports
-- Clinician reports
+- Reject inactive or unavailable clinicians
+- Reject dates outside working days/hours
+- Reject clinician time off and overlapping appointments
+- Allow different clinicians to hold appointments at the same time
+- Preserve cancelled and completed appointment history
 
----
+### Operations
 
-## Non-Functional Requirements
+- PostgreSQL persistence and additive migrations
+- Health endpoint with database connectivity status
+- Brevo HTTPS transactional email on free Render hosting
+- Manual custom-format PostgreSQL backup procedure
 
-- Secure authentication
-- High availability
-- Data integrity
-- Scalable architecture
-- Responsive user interface
-- Audit logging
-- Performance optimization
-- Modular codebase
-- Maintainable architecture
-- Production-ready deployment
+## Non-functional requirements
+
+- Preserve EHR and appointment history
+- Prevent cross-role and altered-ID access
+- Keep secrets outside Git and application logs
+- Provide responsive Bootstrap-based pages
+- Start through the Flask application factory and Gunicorn
+- Run focused automated regression tests without production data
+
+## FYP limitations
+
+- Payment is a demo record; no real card or bank gateway is connected.
+- Filesystem sessions and in-memory rate limits require one Gunicorn worker.
+- Encrypted-field compatibility search is application-level rather than indexed.
+- Public self-registration is disabled; authorized staff create accounts.
+- The placeholder chatbot is not presented as a clinical decision system.
+
+## Future work
+
+- Managed Redis and multiple workers
+- Keyed lookup hashes for indexed encrypted-field searches
+- Real payment integration with verified webhooks
+- Multi-branch organizations and receptionist/accountant roles
+- Laboratory, file-upload, SMS, reminder, and document-export workflows
+- Expanded performance, accessibility, and browser automation testing
