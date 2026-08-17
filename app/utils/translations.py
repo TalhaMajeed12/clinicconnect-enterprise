@@ -34,7 +34,15 @@ TRANSLATIONS = {
     'otp_sent': {'en': 'OTP sent to your email', 'ur': 'آپ کے ای میل پر او ٹی پی بھیج دیا گیا ہے'},
     'invalid_otp': {'en': 'Invalid or expired OTP', 'ur': 'غلط یا میعاد ختم شدہ او ٹی پی'},
     'forgot_password': {'en': 'Forgot Password?', 'ur': 'پاس ورڈ بھول گئے؟'},
+    'note': {'en': 'Note', 'ur': 'نوٹ'},
     'reset_password': {'en': 'Reset Password', 'ur': 'پاس ورڈ ری سیٹ کریں'},
+    'patient_login': {'en': 'Patient Login', 'ur': 'مریض لاگ ان'},
+    'clinician_login': {'en': 'Clinician Login', 'ur': 'ڈاکٹر لاگ ان'},
+    'admin_login': {'en': 'Admin Login', 'ur': 'ایڈمن لاگ ان'},
+    'email_or_phone': {'en': 'Email or Phone', 'ur': 'ای میل یا فون'},
+    'enter_password': {'en': 'Enter your password', 'ur': 'اپنا پاس ورڈ درج کریں'},
+    'account_note': {'en': "If you don't have an account, please contact your clinician or admin.", 'ur': 'اگر آپ کا اکاؤنٹ نہیں ہے تو اپنے ڈاکٹر یا ایڈمن سے رابطہ کریں۔'},
+    'clinician_note': {'en': 'Clinicians must use their assigned username and password.', 'ur': 'ڈاکٹر اپنا مقرر کردہ صارف نام اور پاس ورڈ استعمال کریں۔'},
     
     # Dashboard
     'patients': {'en': 'Patients', 'ur': 'مریض'},
@@ -74,6 +82,32 @@ TRANSLATIONS = {
     'delete_clinician': {'en': 'Delete Clinician', 'ur': 'ڈاکٹر حذف کریں'},
     'audit_logs': {'en': 'Audit Logs', 'ur': 'آڈٹ لاگز'},
     'system_settings': {'en': 'System Settings', 'ur': 'سسٹم سیٹنگز'},
+    'availability': {'en': 'Availability', 'ur': 'دستیابی'},
+    'time_off': {'en': 'Time Off', 'ur': 'چھٹی'},
+    'history': {'en': 'History', 'ur': 'تاریخ'},
+
+    # Public home
+    'welcome_to_clinicconnect': {'en': 'Welcome to ClinicConnect', 'ur': 'کلینک کنیکٹ میں خوش آمدید'},
+    'trusted_healthcare': {'en': 'Your trusted healthcare management system', 'ur': 'آپ کا قابل اعتماد صحت کی دیکھ بھال کا نظام'},
+    'for_patients': {'en': 'For Patients', 'ur': 'مریضوں کے لیے'},
+    'for_clinicians': {'en': 'For Clinicians', 'ur': 'ڈاکٹروں کے لیے'},
+    'for_admins': {'en': 'For Admins', 'ur': 'ایڈمن کے لیے'},
+    'patient_home_text': {'en': 'Book appointments, view your history, and manage your health.', 'ur': 'اپوائنٹمنٹ بک کریں، اپنی طبی تاریخ دیکھیں اور صحت کا انتظام کریں۔'},
+    'clinician_home_text': {'en': 'Manage patients, track appointments, and provide care.', 'ur': 'مریضوں کا انتظام، اپوائنٹمنٹس کی نگرانی اور دیکھ بھال کریں۔'},
+    'admin_home_text': {'en': 'Manage clinicians, patients, and system settings.', 'ur': 'ڈاکٹروں، مریضوں اور نظام کی ترتیبات کا انتظام کریں۔'},
+
+    # Clinical support
+    'clinical_support': {'en': 'Clinical Support', 'ur': 'طبی رہنمائی'},
+    'general_guidance_only': {'en': 'General guidance only', 'ur': 'صرف عمومی رہنمائی'},
+    'medication_safety': {'en': 'Medication safety', 'ur': 'دوا کی حفاظت'},
+    'records': {'en': 'Records', 'ur': 'ریکارڈ'},
+    'ask_general_question': {'en': 'Ask a general question…', 'ur': 'عمومی سوال پوچھیں…'},
+    'chat_privacy': {'en': 'Do not enter names, IDs, diagnoses, or other private medical details.', 'ur': 'نام، شناختی نمبر، تشخیص یا نجی طبی معلومات درج نہ کریں۔'},
+    'chat_appointment_question': {'en': 'How do I book an appointment?', 'ur': 'میں اپوائنٹمنٹ کیسے بک کروں؟'},
+    'chat_medication_question': {'en': 'I have a medication safety question', 'ur': 'مجھے دوا کی حفاظت کے بارے میں سوال ہے'},
+    'chat_records_question': {'en': 'Where can I view my medical history?', 'ur': 'میں اپنی طبی تاریخ کہاں دیکھ سکتا ہوں؟'},
+    'chat_welcome': {'en': 'Welcome! I can show new users how to use appointments, records, password recovery, and medication-safety guidance. I do not diagnose or access patient records.', 'ur': 'خوش آمدید! میں نئے صارفین کو اپوائنٹمنٹ، ریکارڈ، پاس ورڈ کی بحالی اور دوا کی حفاظت سمجھا سکتا ہوں۔ میں تشخیص یا مریض کا ریکارڈ نہیں دیکھتا۔'},
+    'chat_error': {'en': 'The assistant is temporarily unavailable. For urgent concerns, contact local emergency services or a qualified clinician.', 'ur': 'معاون عارضی طور پر دستیاب نہیں۔ فوری مسئلے میں مقامی ایمرجنسی سروس یا مستند ڈاکٹر سے رابطہ کریں۔'},
     
     # Status
     'pending': {'en': 'Pending', 'ur': 'زیر التواء'},

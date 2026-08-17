@@ -22,7 +22,7 @@
         toggle.setAttribute('aria-expanded', 'true');
         input.focus();
         if (!messages.children.length) {
-            addMessage('I can help with appointments, records, medication safety, and urgent-care guidance. I do not diagnose or access patient records.', 'assistant');
+            addMessage(panel.dataset.welcome, 'assistant');
         }
     };
 
@@ -52,7 +52,7 @@
             if (!response.ok) throw new Error(data.error || 'Request failed');
             addMessage(`${data.message}\n\n${data.disclaimer}`, 'assistant', data.emergency);
         } catch (error) {
-            addMessage('The assistant is temporarily unavailable. For urgent concerns, contact local emergency services or a qualified clinician.', 'assistant', true);
+            addMessage(panel.dataset.error, 'assistant', true);
         } finally {
             input.disabled = false;
             input.focus();

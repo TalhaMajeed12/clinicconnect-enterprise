@@ -1,73 +1,31 @@
 {% extends "base.html" %}
-
 {% block content %}
 <div class="container-fluid">
-    <h2><i class="fas fa-history"></i> Audit Logs</h2>
-    <hr>
-    
-    <div class="card">
-        <div class="card-body">
-            <!-- Back to Dashboard Button -->
-            <div class="mb-3">
-                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </div>
-            
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>User</th>
-                            <th>Action</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in logs.items %}
-                        <tr>
-                            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'N/A' }}</td>
-                            <td>{{ log.user.full_name if log.user else 'System' }}</td>
-                            <td>{{ log.action }}</td>
-                            <td>{{ log.details or 'N/A' }}</td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-3">
-                                <i class="fas fa-history fa-2x d-block mb-2"></i>
-                                No audit logs found.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            
-            {% if logs.pages > 1 %}
-            <nav>
-                <ul class="pagination">
-                    {% if logs.has_prev %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('admin.audit_logs', page=logs.prev_num) }}">Previous</a></li>
-                    {% endif %}
-                    
-                    {% for page_num in logs.iter_pages() %}
-                        {% if page_num %}
-                            <li class="page-item {% if page_num == logs.page %}active{% endif %}">
-                                <a class="page-link" href="{{ url_for('admin.audit_logs', page=page_num) }}">{{ page_num }}</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if logs.has_next %}
-                    <li class="page-item"><a class="page-link" href="{{ url_for('admin.audit_logs', page=logs.next_num) }}">Next</a></li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-        </div>
-    </div>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h2><i class="fas fa-history"></i> Activity Records</h2>
+    <form method="post" action="{{ url_for('admin.archive_audit_logs') }}" class="d-flex gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <select name="days" class="form-select" aria-label="Archive records older than">
+        <option value="7">Older than 1 week</option><option value="30" selected>Older than 1 month</option><option value="90">Older than 3 months</option>
+      </select>
+      <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-box-archive"></i> Archive</button>
+    </form>
+  </div>
+  <p class="text-muted">Archiving reduces the active list without deleting any record. Archived activity remains searchable here.</p>
+  <form method="get" class="card card-body mb-3"><div class="row g-2">
+    <div class="col-md-2"><select name="scope" class="form-select"><option value="active" {{ 'selected' if filters.scope == 'active' }}>Active</option><option value="archived" {{ 'selected' if filters.scope == 'archived' }}>Archived</option><option value="all" {{ 'selected' if filters.scope == 'all' }}>All</option></select></div>
+    <div class="col-md-2"><input name="action" value="{{ filters.action }}" class="form-control" placeholder="Action"></div>
+    <div class="col-md-2"><select name="resource_type" class="form-select"><option value="">All resources</option>{% for item in resource_types %}<option value="{{ item }}" {{ 'selected' if filters.resource_type == item }}>{{ item }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control" title="From date"></div>
+    <div class="col-md-2"><input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control" title="To date"></div>
+    <div class="col-md-2 d-flex gap-1"><button class="btn btn-primary flex-fill">Filter</button><a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline-secondary">Clear</a></div>
+  </div></form>
+  <div class="card"><div class="card-body"><div class="table-responsive">
+    <table class="table table-striped table-hover align-middle"><thead class="table-dark"><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Resource</th><th>Details</th><th>State</th></tr></thead>
+      <tbody>{% for log in logs.items %}<tr><td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'N/A' }}</td><td>{{ log.user.full_name if log.user else 'System' }}</td><td>{{ log.action }}</td><td>{{ log.resource_type or 'N/A' }}</td><td><small>{{ log.details or 'N/A' }}</small></td><td>{% if log.archived_at %}<span class="badge bg-secondary">Archived</span>{% else %}<span class="badge bg-success">Active</span>{% endif %}</td></tr>{% else %}<tr><td colspan="6" class="text-center text-muted py-4">No matching activity records.</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% if logs.pages > 1 %}<nav><ul class="pagination mb-0">{% for page_num in logs.iter_pages() %}{% if page_num %}<li class="page-item {{ 'active' if page_num == logs.page }}"><a class="page-link" href="{{ url_for('admin.audit_logs', page=page_num, scope=filters.scope, action=filters.action, resource_type=filters.resource_type, date_from=filters.date_from, date_to=filters.date_to) }}">{{ page_num }}</a></li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}{% endfor %}</ul></nav>{% endif %}
+  </div></div>
 </div>
 {% endblock %}

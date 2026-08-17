@@ -1,1 +1,21 @@
  
+html[dir="rtl"] body {
+    direction: rtl;
+    text-align: right;
+    font-family: "Noto Nastaliq Urdu", "Noto Sans Arabic", Arial, sans-serif;
+}
+
+html[dir="rtl"] .navbar-nav,
+html[dir="rtl"] .dropdown-menu,
+html[dir="rtl"] .card,
+html[dir="rtl"] .alert,
+html[dir="rtl"] .form-label,
+html[dir="rtl"] table { text-align: right; }
+
+html[dir="rtl"] .ms-auto { margin-left: 0 !important; margin-right: auto !important; }
+html[dir="rtl"] .me-auto { margin-right: 0 !important; margin-left: auto !important; }
+html[dir="rtl"] .clinical-chat-toggle { left: 1.25rem; right: auto; }
+html[dir="rtl"] .clinical-chat-panel { left: 1.25rem; right: auto; }
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="tel"],
+html[dir="rtl"] .font-monospace { direction: ltr; text-align: left; }

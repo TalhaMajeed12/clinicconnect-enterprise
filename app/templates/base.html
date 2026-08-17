@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ session.get('language', 'en') }}">
+<html lang="{{ session.get('language', 'en') }}" dir="{{ 'rtl' if session.get('language') == 'ur' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,21 +40,21 @@
                 <ul class="navbar-nav me-auto">
                     {% if session.get('user_id') %}
                         {% if session.get('role') == 'admin' %}
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.dashboard' }}" href="{{ url_for('admin.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['admin.patients', 'admin.patient_detail'] }}" href="{{ url_for('admin.patients') }}"><i class="fas fa-users"></i> Patients</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['admin.clinicians', 'admin.clinician_detail', 'admin.add_clinician', 'admin.edit_clinician'] }}" href="{{ url_for('admin.clinicians') }}"><i class="fas fa-user-md"></i> Clinicians</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.appointments' }}" href="{{ url_for('admin.appointments') }}"><i class="fas fa-calendar-check"></i> Appointments</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.audit_logs' }}" href="{{ url_for('admin.audit_logs') }}"><i class="fas fa-history"></i> Audit Logs</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.dashboard' }}" href="{{ url_for('admin.dashboard') }}"><i class="fas fa-chart-pie"></i> {{ t('dashboard') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['admin.patients', 'admin.patient_detail'] }}" href="{{ url_for('admin.patients') }}"><i class="fas fa-users"></i> {{ t('patients') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['admin.clinicians', 'admin.clinician_detail', 'admin.add_clinician', 'admin.edit_clinician'] }}" href="{{ url_for('admin.clinicians') }}"><i class="fas fa-user-md"></i> {{ t('clinicians') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.appointments' }}" href="{{ url_for('admin.appointments') }}"><i class="fas fa-calendar-check"></i> {{ t('appointments') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.audit_logs' }}" href="{{ url_for('admin.audit_logs') }}"><i class="fas fa-history"></i> {{ t('audit_logs') }}</a></li>
                         {% elif session.get('role') == 'clinician' %}
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.dashboard' }}" href="{{ url_for('clinician.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['clinician.patients_list', 'clinician.patient_folder', 'clinician.add_patient', 'clinician.add_visit'] }}" href="{{ url_for('clinician.patients_list') }}"><i class="fas fa-users"></i> Patients</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.appointments' }}" href="{{ url_for('clinician.appointments') }}"><i class="fas fa-calendar-check"></i> Appointments</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.availability' }}" href="{{ url_for('clinician.availability') }}"><i class="fas fa-clock"></i> Availability</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.time_off' }}" href="{{ url_for('clinician.time_off') }}"><i class="fas fa-calendar-times"></i> Time Off</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.dashboard' }}" href="{{ url_for('clinician.dashboard') }}"><i class="fas fa-chart-pie"></i> {{ t('dashboard') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['clinician.patients_list', 'clinician.patient_folder', 'clinician.add_patient', 'clinician.add_visit'] }}" href="{{ url_for('clinician.patients_list') }}"><i class="fas fa-users"></i> {{ t('patients') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.appointments' }}" href="{{ url_for('clinician.appointments') }}"><i class="fas fa-calendar-check"></i> {{ t('appointments') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.availability' }}" href="{{ url_for('clinician.availability') }}"><i class="fas fa-clock"></i> {{ t('availability') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.time_off' }}" href="{{ url_for('clinician.time_off') }}"><i class="fas fa-calendar-times"></i> {{ t('time_off') }}</a></li>
                         {% else %}
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.dashboard' }}" href="{{ url_for('patient.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.history' }}" href="{{ url_for('patient.history') }}"><i class="fas fa-history"></i> History</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'appointments.book' }}" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.dashboard' }}" href="{{ url_for('patient.dashboard') }}"><i class="fas fa-chart-pie"></i> {{ t('dashboard') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.history' }}" href="{{ url_for('patient.history') }}"><i class="fas fa-history"></i> {{ t('history') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'appointments.book' }}" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i> {{ t('book_appointment') }}</a></li>
                       
                         {% endif %}
                     {% endif %}
@@ -73,9 +73,9 @@
                     </li>
                     
                     {% if session.get('user_id') %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> {{ t('logout') }}</a></li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i> {{ t('login') }}</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -102,30 +102,29 @@
         {% block content %}{% endblock %}
     </main>
 
-    {% if session.get('user_id') %}
     <button id="clinical-chat-toggle" class="btn btn-primary clinical-chat-toggle" type="button" aria-controls="clinical-chat-panel" aria-expanded="false">
         <i class="fas fa-comment-medical" aria-hidden="true"></i>
-        <span>Clinical Support</span>
+        <span>{{ t('clinical_support') }}</span>
     </button>
-    <section id="clinical-chat-panel" class="clinical-chat-panel" aria-label="Clinical support assistant" hidden>
+    <section id="clinical-chat-panel" class="clinical-chat-panel" aria-label="Clinical support assistant"
+             data-welcome="{{ t('chat_welcome') }}" data-error="{{ t('chat_error') }}" hidden>
         <header class="clinical-chat-header">
-            <div><strong>Clinical Support</strong><small>General guidance only</small></div>
+            <div><strong>{{ t('clinical_support') }}</strong><small>{{ t('general_guidance_only') }}</small></div>
             <button id="clinical-chat-close" class="btn-close btn-close-white" type="button" aria-label="Close assistant"></button>
         </header>
         <div id="clinical-chat-messages" class="clinical-chat-messages" aria-live="polite"></div>
         <div class="clinical-chat-suggestions" aria-label="Suggested questions">
-            <button type="button" data-chat-question="How do I book an appointment?">Appointments</button>
-            <button type="button" data-chat-question="I have a medication safety question">Medication safety</button>
-            <button type="button" data-chat-question="Where can I view my medical history?">Records</button>
+            <button type="button" data-chat-question="{{ t('chat_appointment_question') }}">{{ t('appointments') }}</button>
+            <button type="button" data-chat-question="{{ t('chat_medication_question') }}">{{ t('medication_safety') }}</button>
+            <button type="button" data-chat-question="{{ t('chat_records_question') }}">{{ t('records') }}</button>
         </div>
         <form id="clinical-chat-form" class="clinical-chat-form">
             <label class="visually-hidden" for="clinical-chat-input">Ask the clinical support assistant</label>
-            <input id="clinical-chat-input" class="form-control" maxlength="1000" autocomplete="off" placeholder="Ask a general question…" required>
+            <input id="clinical-chat-input" class="form-control" maxlength="1000" autocomplete="off" placeholder="{{ t('ask_general_question') }}" required>
             <button class="btn btn-primary" type="submit" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
         </form>
-        <p class="clinical-chat-privacy">Do not enter names, IDs, diagnoses, or other private medical details.</p>
+        <p class="clinical-chat-privacy">{{ t('chat_privacy') }}</p>
     </section>
-    {% endif %}
     
     <!-- Footer -->
     <footer class="footer mt-5 py-4 bg-light border-top">
@@ -153,9 +152,7 @@
             }
         });
     </script>
-    {% if session.get('user_id') %}
     <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
-    {% endif %}
     
     <!-- ============================================
     UNIVERSAL SESSION FIX - Back button prevention

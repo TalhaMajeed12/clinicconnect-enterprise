@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 
 from app import create_app
 from app.extensions import db
-from app.models import (Appointment, ClinicianProfile, ClinicianTimeOff,
+from app.models import (Appointment, AuditLog, ClinicianProfile, ClinicianTimeOff,
                         PasswordResetToken, PatientProfile, User)
 
 
@@ -310,11 +310,11 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn(b'second@example.test', by_dob.data)
         self.assertNotIn(b'patient@example.test', by_dob.data)
 
-    def test_clinical_chatbot_is_authenticated_and_escalates_emergencies(self):
+    def test_clinical_chatbot_is_public_bilingual_and_escalates_emergencies(self):
         unauthenticated = self.client.post(
             '/chatbot/message', json={'message': 'How do I book?'}
         )
-        self.assertEqual(unauthenticated.status_code, 401)
+        self.assertEqual(unauthenticated.status_code, 200)
 
         self._session_as(self.patient_user)
         emergency = self.client.post(
@@ -330,6 +330,32 @@ class CoreFlowTests(unittest.TestCase):
         )
         self.assertFalse(medication.get_json()['emergency'])
         self.assertIn('Do not start, stop, double', medication.get_json()['message'])
+
+        self.client.get('/auth/change_language/ur')
+        urdu = self.client.post('/chatbot/message', json={'message': 'اپوائنٹمنٹ کیسے بک کروں؟'})
+        self.assertEqual(urdu.get_json()['intent'], 'appointment')
+        self.assertIn('اپوائنٹمنٹ', urdu.get_json()['message'])
+
+    def test_urdu_home_uses_rtl_and_translated_content(self):
+        self.client.get('/auth/change_language/ur')
+        response = self.client.get('/')
+        self.assertIn(b'dir="rtl"', response.data)
+        self.assertIn('کلینک کنیکٹ میں خوش آمدید'.encode('utf-8'), response.data)
+
+    def test_activity_is_recorded_and_old_records_are_archived_not_deleted(self):
+        old = AuditLog(user_id=self.admin.id, action='old_action', resource_type='test',
+                       timestamp=datetime.utcnow() - timedelta(days=40))
+        db.session.add(old)
+        db.session.commit()
+        self._session_as(self.admin)
+        response = self.client.post('/admin/audit-logs/archive', data={'days': '30'})
+        self.assertEqual(response.status_code, 302)
+        db.session.refresh(old)
+        self.assertIsNotNone(old.archived_at)
+        self.assertIsNotNone(db.session.get(AuditLog, old.id))
+        archived = self.client.get('/admin/audit-logs?scope=archived&action=old_action')
+        self.assertIn(b'old_action', archived.data)
+        self.assertTrue(AuditLog.query.filter_by(action='request_activity').count())
 
     def test_booking_rejects_full_day_time_off(self):
         slot = (datetime.utcnow() + timedelta(days=3)).replace(hour=10, minute=0, second=0, microsecond=0)

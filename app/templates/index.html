@@ -6,9 +6,9 @@
 <div class="row">
     <div class="col-md-8 offset-md-2 text-center">
         <h1 class="display-4">
-            <i class="fas fa-heartbeat text-primary"></i> Welcome to ClinicConnect
+            <i class="fas fa-heartbeat text-primary"></i> {{ t('welcome_to_clinicconnect') }}
         </h1>
-        <p class="lead">Your trusted healthcare management system</p>
+        <p class="lead">{{ t('trusted_healthcare') }}</p>
         <hr class="my-4">
         
         <div class="row mt-5">
@@ -16,10 +16,10 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <i class="fas fa-user-md fa-3x text-primary"></i>
-                        <h5 class="card-title mt-3">For Patients</h5>
-                        <p class="card-text">Book appointments, view your history, and manage your health.</p>
+                        <h5 class="card-title mt-3">{{ t('for_patients') }}</h5>
+                        <p class="card-text">{{ t('patient_home_text') }}</p>
                         {% if not session.get('user_id') %}
-                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">{{ t('login') }}</a>
                         {% endif %}
                     </div>
                 </div>
@@ -28,10 +28,10 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <i class="fas fa-stethoscope fa-3x text-success"></i>
-                        <h5 class="card-title mt-3">For Clinicians</h5>
-                        <p class="card-text">Manage patients, track appointments, and provide care.</p>
+                        <h5 class="card-title mt-3">{{ t('for_clinicians') }}</h5>
+                        <p class="card-text">{{ t('clinician_home_text') }}</p>
                         {% if not session.get('user_id') %}
-                            <a href="{{ url_for('auth.clinician_login') }}" class="btn btn-success">Clinician Login</a>
+                            <a href="{{ url_for('auth.clinician_login') }}" class="btn btn-success">{{ t('clinician_login') }}</a>
                         {% endif %}
                     </div>
                 </div>
@@ -40,10 +40,10 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <i class="fas fa-user-shield fa-3x text-warning"></i>
-                        <h5 class="card-title mt-3">For Admins</h5>
-                        <p class="card-text">Manage clinicians, patients, and system settings.</p>
+                        <h5 class="card-title mt-3">{{ t('for_admins') }}</h5>
+                        <p class="card-text">{{ t('admin_home_text') }}</p>
                         {% if not session.get('user_id') %}
-                            <a href="{{ url_for('auth.admin_login') }}" class="btn btn-warning">Admin Login</a>
+                            <a href="{{ url_for('auth.admin_login') }}" class="btn btn-warning">{{ t('admin_login') }}</a>
                         {% endif %}
                     </div>
                 </div>

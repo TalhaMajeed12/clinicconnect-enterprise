@@ -17,6 +17,8 @@ class AuditLog(db.Model):
     user_agent = db.Column(db.String(255))
     session_id = db.Column(db.String(100))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    archived_at = db.Column(db.DateTime, nullable=True, index=True)
+    archive_batch_id = db.Column(db.String(36), nullable=True, index=True)
     
     user = db.relationship('User', backref='audit_logs')
 

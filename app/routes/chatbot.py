@@ -8,13 +8,8 @@ chatbot_bp = Blueprint('chatbot', __name__)
 
 
 @chatbot_bp.post('/message')
-@limiter.limit('20 per minute')
+@limiter.limit('10 per minute')
 def message():
-    if not session.get('user_id') or session.get('role') not in {
-        'admin', 'clinician', 'patient'
-    }:
-        return jsonify({'error': 'Authentication required'}), 401
-
     data = request.get_json(silent=True) or {}
     user_message = data.get('message', '')
     if not isinstance(user_message, str):
@@ -22,4 +17,7 @@ def message():
     if len(user_message) > 1000:
         return jsonify({'error': 'Message is too long'}), 400
 
-    return jsonify(clinical_support_reply(user_message))
+    return jsonify(clinical_support_reply(
+        user_message,
+        language=session.get('language', 'en'),
+    ))

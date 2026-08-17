@@ -42,3 +42,5 @@ Reviewed additive SQL migrations are stored in `migrations/`:
 - `002_add_password_reset_tokens.sql`
 
 Back up PostgreSQL and verify the target before applying migrations. Never reset production or delete EHR data to resolve schema drift.
+
+`audit_logs.archived_at` and `audit_logs.archive_batch_id` provide a non-destructive activity lifecycle. Active and archived records remain in PostgreSQL and are available through admin filters; no clinical record is purged by this workflow.

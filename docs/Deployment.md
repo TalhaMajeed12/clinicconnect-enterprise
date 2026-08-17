@@ -34,9 +34,12 @@ Review the target database and create a backup before applying SQL manually:
 ```powershell
 psql "$env:DATABASE_URL" --file="migrations/001_add_clinician_time_off.sql"
 psql "$env:DATABASE_URL" --file="migrations/002_add_password_reset_tokens.sql"
+psql "$env:DATABASE_URL" --file="migrations/003_add_audit_archiving.sql"
 ```
 
 The migrations are additive. Never initialize or reset an existing production database to resolve migration errors.
+
+Apply migration 003 before deploying the matching application commit. In the admin Activity Records page, archive operational audit entries older than 7, 30, or 90 days. Archiving never deletes records and does not affect appointments, visits, prescriptions, payments, or patient history.
 
 ## Backup and verification
 

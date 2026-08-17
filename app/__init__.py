@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session
+from flask import Flask, render_template, request, session
 from flask_session import Session
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -170,6 +170,31 @@ def create_app(config_name='default'):
         response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, private'
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
+
+        # Record successful state-changing activity without storing form data,
+        # clinical content, credentials, or chatbot messages.
+        if (request.method in {'POST', 'PUT', 'PATCH', 'DELETE'}
+                and response.status_code < 400
+                and session.get('user_id')
+                and request.endpoint not in {'chatbot.message'}):
+            try:
+                from app.models import AuditLog
+                db.session.add(AuditLog(
+                    user_id=session.get('user_id'),
+                    action='request_activity',
+                    resource_type='route',
+                    details={
+                        'endpoint': request.endpoint or 'unknown',
+                        'method': request.method,
+                        'status': response.status_code,
+                    },
+                    ip_address=request.remote_addr,
+                    user_agent=(request.user_agent.string or '')[:255],
+                ))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                app.logger.warning('Unable to record request activity', exc_info=True)
         
         return response
     

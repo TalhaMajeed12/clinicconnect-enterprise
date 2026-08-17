@@ -87,6 +87,7 @@ class Config:
     PUBLIC_REGISTRATION_ENABLED = os.environ.get(
         'PUBLIC_REGISTRATION_ENABLED', 'False'
     ) == 'True'
+    AUDIT_RETENTION_DAYS = int(os.environ.get('AUDIT_RETENTION_DAYS', 30))
     
     # Logging
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')

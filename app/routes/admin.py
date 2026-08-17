@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from app import db
 from app.models import User, PatientProfile, ClinicianProfile, Appointment, Payment, AuditLog
-from datetime import datetime
+from datetime import datetime, timedelta
+from uuid import uuid4
 from sqlalchemy import func
 import traceback
 from app.utils.patient_search import search_patients
@@ -412,7 +413,31 @@ def audit_logs():
     try:
         page = request.args.get('page', 1, type=int)
 
-        logs = AuditLog.query.order_by(
+        scope = request.args.get('scope', 'active')
+        action = request.args.get('action', '').strip()
+        resource_type = request.args.get('resource_type', '').strip()
+        date_from = request.args.get('date_from', '').strip()
+        date_to = request.args.get('date_to', '').strip()
+        query = AuditLog.query
+        if scope == 'archived':
+            query = query.filter(AuditLog.archived_at.isnot(None))
+        elif scope != 'all':
+            scope = 'active'
+            query = query.filter(AuditLog.archived_at.is_(None))
+        if action:
+            query = query.filter(AuditLog.action.ilike(f'%{action}%'))
+        if resource_type:
+            query = query.filter(AuditLog.resource_type == resource_type)
+        try:
+            if date_from:
+                query = query.filter(AuditLog.timestamp >= datetime.strptime(date_from, '%Y-%m-%d'))
+            if date_to:
+                query = query.filter(AuditLog.timestamp < datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1))
+        except ValueError:
+            flash('Use valid dates in the activity filters.', 'warning')
+            return redirect(url_for('admin.audit_logs'))
+
+        logs = query.order_by(
             AuditLog.timestamp.desc()
         ).paginate(
             page=page,
@@ -421,10 +446,38 @@ def audit_logs():
 
         return render_template(
             'admin/audit_logs.html',
-            logs=logs
+            logs=logs,
+            filters={'scope': scope, 'action': action, 'resource_type': resource_type,
+                     'date_from': date_from, 'date_to': date_to},
+            resource_types=[row[0] for row in db.session.query(AuditLog.resource_type)
+                            .filter(AuditLog.resource_type.isnot(None)).distinct().order_by(AuditLog.resource_type)],
         )
 
     except Exception as e:
         print(f"Audit Logs Error: {str(e)}")
         flash('Error loading logs', 'danger')
         return render_template('errors/500.html'), 500
+
+
+@admin_bp.post('/audit-logs/archive')
+def archive_audit_logs():
+    if not is_admin():
+        return redirect(url_for('auth.admin_login'))
+    days = request.form.get('days', type=int)
+    if days not in {7, 30, 90}:
+        flash('Choose a valid archive period.', 'warning')
+        return redirect(url_for('admin.audit_logs'))
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    batch_id = str(uuid4())
+    count = (AuditLog.query
+             .filter(AuditLog.archived_at.is_(None), AuditLog.timestamp < cutoff)
+             .update({'archived_at': datetime.utcnow(), 'archive_batch_id': batch_id},
+                     synchronize_session=False))
+    db.session.add(AuditLog(
+        user_id=session.get('user_id'), action='audit_logs_archived',
+        resource_type='audit_log',
+        details={'older_than_days': days, 'records_archived': count, 'batch_id': batch_id},
+    ))
+    db.session.commit()
+    flash(f'{count} activity records archived. They remain available under Archived.', 'success')
+    return redirect(url_for('admin.audit_logs', scope='active'))
