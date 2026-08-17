@@ -106,6 +106,15 @@ a, button, .btn, .card, .nav-link, .dropdown-item, .list-group-item,
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+.patient-search-panel {
+    background: linear-gradient(135deg, #f2faf8, #fffaf4);
+    border: 1px solid var(--cc-border);
+    border-radius: 1rem;
+    padding: 1.15rem;
+}
+.patient-search-panel .form-label { color: #385467; font-size: .82rem; font-weight: 700; }
+.patient-search-panel .form-control { background: rgb(255 255 255 / 90%); }
 .footer .text-muted { color: #b8c8d2 !important; }
 .footer-brand { color: #fff; font-size: 1.15rem; font-weight: 700; }
 

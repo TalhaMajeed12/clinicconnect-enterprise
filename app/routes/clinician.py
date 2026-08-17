@@ -4,7 +4,7 @@ from app.models import (User, PatientProfile, ClinicianProfile, ClinicianTimeOff
                         Appointment, Visit, Prescription, Attendance)
 from datetime import datetime, date
 import traceback
-from app.utils.patient_search import search_patients as filter_patients
+from app.utils.patient_search import search_patients_by_fields
 
 clinician_bp = Blueprint('clinician', __name__)
 
@@ -104,16 +104,20 @@ def patients_list():
 
     try:
         clinician = get_clinician()
-        search = request.args.get('search', '').strip()
+        filters = {key: request.args.get(key, '').strip()
+                   for key in ('patient_no', 'name', 'contact', 'date_of_birth')}
 
         query = PatientProfile.query.join(User)
 
-        patients = filter_patients(query, search)
+        patients = search_patients_by_fields(
+            query, filters, request.args.get('search', '').strip()
+        )
 
         return render_template(
             'clinician/patients_list.html',
             patients=patients,
-            clinician=clinician
+            clinician=clinician,
+            search_filters=filters,
         )
 
     except Exception as e:

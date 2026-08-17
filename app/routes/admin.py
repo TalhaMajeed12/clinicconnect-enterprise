@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 from sqlalchemy import func
 import traceback
-from app.utils.patient_search import search_patients
+from app.utils.patient_search import search_patients_by_fields
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -60,13 +60,17 @@ def patients():
         return redirect(url_for('auth.admin_login'))
 
     try:
-        search = request.args.get('search', '').strip()
+        filters = {key: request.args.get(key, '').strip()
+                   for key in ('patient_no', 'name', 'contact', 'date_of_birth')}
         query = PatientProfile.query.join(User)
-        patients = search_patients(query, search)
+        patients = search_patients_by_fields(
+            query, filters, request.args.get('search', '').strip()
+        )
 
         return render_template(
             'admin/patients.html',
-            patients=patients
+            patients=patients,
+            search_filters=filters,
         )
 
     except Exception as e:

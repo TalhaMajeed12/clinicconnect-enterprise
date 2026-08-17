@@ -310,6 +310,13 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn(b'second@example.test', by_dob.data)
         self.assertNotIn(b'patient@example.test', by_dob.data)
 
+        fielded = self.client.get(
+            '/admin/patients?name=Shared+Patient&contact=5550101&date_of_birth=2001-03-04'
+        )
+        self.assertIn(b'second@example.test', fielded.data)
+        self.assertNotIn(b'patient@example.test', fielded.data)
+        self.assertIn(b'Patient number', fielded.data)
+
     def test_clinician_patient_list_survives_unreadable_protected_fields(self):
         self._session_as(self.clinician_user)
         original_key = self.app.config['ENCRYPTION_KEY']
