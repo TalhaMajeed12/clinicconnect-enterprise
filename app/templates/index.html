@@ -43,4 +43,37 @@
     <div class="col-md-4"><div class="feature-item"><i class="fas fa-comments"></i><div><h3 class="h6 text-white">Help for newcomers</h3><p class="small">The bilingual FAQ assistant explains the app while maintaining clear safety and privacy limits.</p></div></div></div>
   </div>
 </section>
+
+{% if not session.get('user_id') %}
+<section id="appointment-request" class="appointment-request-section mt-5 pt-4" tabindex="-1">
+  <div class="section-heading text-center mx-auto mb-4">
+    <div class="hero-eyebrow mb-2">First appointment</div>
+    <h2>Find an available doctor and request a visit</h2>
+    <p class="text-muted">Compare specialties, verified ratings, fees, and live availability. Clinic staff will verify your details by telephone before creating your patient portal.</p>
+  </div>
+  <form id="guided-booking-form" class="guided-booking-form homepage-booking-form card shadow-sm">
+    <div class="card-body p-4 p-lg-5">
+      <div class="alert alert-info"><i class="fas fa-shield-halved me-2"></i>Your contact details are encrypted before database storage. Never enter a password, payment card, identity number, or detailed medical history here.</div>
+      <div class="booking-step"><span>1</span><div><strong>Choose care and availability</strong><small>We show the best-rated matching doctor first, with alternatives.</small></div></div>
+      <div class="row g-3 mb-4">
+        <div class="col-md-6"><label for="guided-specialty" class="form-label">Specialty</label><select id="guided-specialty" class="form-select" required><option value="">Choose a specialty</option></select></div>
+        <div class="col-md-6"><label for="guided-date" class="form-label">Search from date</label><input id="guided-date" class="form-control" type="date" required></div>
+        <div class="col-md-7"><label for="guided-doctor" class="form-label">Available doctor</label><select id="guided-doctor" class="form-select" required><option value="">Choose specialty and date</option></select></div>
+        <div class="col-md-5"><label for="guided-slot" class="form-label">Preferred slot</label><select id="guided-slot" class="form-select" required><option value="">Choose a doctor</option></select></div>
+      </div>
+      <div class="booking-step"><span>2</span><div><strong>Your contact details</strong><small>Clinic staff will confirm these details when you call.</small></div></div>
+      <div class="row g-3">
+        <div class="col-md-6"><label for="guided-name" class="form-label">Full name</label><input id="guided-name" class="form-control" maxlength="150" autocomplete="name" required></div>
+        <div class="col-md-3"><label for="guided-dob" class="form-label">Date of birth</label><input id="guided-dob" class="form-control" type="date" autocomplete="bday" required></div>
+        <div class="col-md-3"><label for="guided-phone" class="form-label">Phone</label><input id="guided-phone" class="form-control" type="tel" maxlength="40" autocomplete="tel" required></div>
+        <div class="col-md-6"><label for="guided-email" class="form-label">Email (optional)</label><input id="guided-email" class="form-control" type="email" maxlength="254" autocomplete="email"></div>
+        <div class="col-md-6"><label for="guided-reason" class="form-label">Brief reason (optional)</label><textarea id="guided-reason" class="form-control" rows="2" maxlength="1000"></textarea></div>
+      </div>
+      <div id="guided-booking-status" class="alert alert-light border mt-4 mb-3" aria-live="polite">Availability will load automatically.</div>
+      <button class="btn btn-primary btn-lg w-100" type="submit"><i class="fas fa-paper-plane me-2"></i>Send request to clinic staff</button>
+      <p class="small text-muted text-center mt-3 mb-0">Submitting does not confirm the appointment or take payment. Call the clinic with the reference shown after submission.</p>
+    </div>
+  </form>
+</section>
+{% endif %}
 {% endblock %}

@@ -513,35 +513,48 @@ main.container { max-width: 1240px; }
     .consultation-messages-card { min-height: 540px; }
     .consultation-messages { height: 390px; }
 }
-.guided-booking-form {
-    flex: 1 1 auto;
-    min-height: 0;
-    margin: 0 .9rem .75rem;
-    padding: .9rem;
-    overflow-y: auto;
-    max-height: none;
+.appointment-request-section {
+    scroll-margin-top: 6rem;
+}
+
+.appointment-request-section .section-heading {
+    max-width: 48rem;
+}
+
+.homepage-booking-form {
+    margin: 0 auto;
+    max-width: 68rem;
     border: 1px solid #d7e8e4;
-    border-radius: 1rem;
-    background: #f8fbfa;
-    overflow-x: hidden;
+    border-radius: 1.4rem;
+    background: linear-gradient(145deg, #fff 0%, #f5fbf9 100%);
 }
 
-.guided-booking-form > .btn[type="submit"] {
-    bottom: 0;
-    position: sticky;
-    z-index: 2;
-    box-shadow: 0 -.5rem 1rem #f8fbfa;
+.booking-step {
+    align-items: center;
+    display: flex;
+    gap: .8rem;
+    margin: 1.25rem 0 .9rem;
 }
 
-.clinical-chat-panel.guided-booking-open .clinical-chat-messages,
-.clinical-chat-panel.guided-booking-open .clinical-chat-suggestions,
-.clinical-chat-panel.guided-booking-open .clinical-chat-form,
-.clinical-chat-panel.guided-booking-open .clinical-chat-privacy {
-    display: none;
+.booking-step > span {
+    align-items: center;
+    background: var(--cc-primary);
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    flex: 0 0 2.25rem;
+    font-weight: 700;
+    height: 2.25rem;
+    justify-content: center;
 }
 
-.clinical-chat-panel.guided-booking-open #guided-booking-toggle {
-    flex: 0 0 auto;
+.booking-step strong,
+.booking-step small {
+    display: block;
+}
+
+.booking-step small {
+    color: var(--cc-text-muted);
 }
 
 @media (max-width: 575.98px) {
@@ -554,9 +567,8 @@ main.container { max-width: 1240px; }
     }
 }
 
-.guided-booking-form label {
+.homepage-booking-form label {
     margin-bottom: .2rem;
     color: #31535c;
-    font-size: .75rem;
     font-weight: 700;
 }

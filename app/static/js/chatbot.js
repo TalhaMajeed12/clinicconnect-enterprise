@@ -51,12 +51,7 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Request failed');
             addMessage(`${data.message}\n\n${data.disclaimer}`, 'assistant', data.emergency);
-            if (data.action === 'guided_booking' && bookingForm) {
-                bookingForm.hidden = false;
-                panel.classList.add('guided-booking-open');
-                bookingToggle.innerHTML = '<i class="fas fa-arrow-left me-2"></i>Back to assistant';
-                loadDiscovery();
-            }
+            if (data.action === 'guided_booking' && bookingToggle) openGuidedBooking();
         } catch (error) {
             addMessage(panel.dataset.error, 'assistant', true);
         } finally {
@@ -80,7 +75,19 @@
 
     const bookingToggle = document.getElementById('guided-booking-toggle');
     const bookingForm = document.getElementById('guided-booking-form');
-    if (!bookingToggle || !bookingForm) return;
+    if (!bookingToggle) return;
+    const bookingSection = document.getElementById('appointment-request');
+    const openGuidedBooking = () => {
+        if (!bookingForm || !bookingSection) {
+            window.location.href = bookingToggle.dataset.bookingUrl;
+            return;
+        }
+        closePanel();
+        bookingSection.scrollIntoView({behavior: 'smooth', block: 'start'});
+        window.setTimeout(() => bookingSection.focus({preventScroll: true}), 450);
+    };
+    bookingToggle.addEventListener('click', openGuidedBooking);
+    if (!bookingForm) return;
     const specialty = document.getElementById('guided-specialty');
     const date = document.getElementById('guided-date');
     const doctor = document.getElementById('guided-doctor');
@@ -119,17 +126,6 @@
         } catch (error) { bookingStatus.textContent = error.message; }
     };
 
-    bookingToggle.addEventListener('click', () => {
-        bookingForm.hidden = !bookingForm.hidden;
-        panel.classList.toggle('guided-booking-open', !bookingForm.hidden);
-        bookingToggle.innerHTML = bookingForm.hidden
-            ? '<i class="fas fa-calendar-check me-2"></i>Find a doctor and request a slot'
-            : '<i class="fas fa-arrow-left me-2"></i>Back to assistant';
-        if (!bookingForm.hidden) {
-            bookingForm.scrollTop = 0;
-            loadDiscovery();
-        }
-    });
     specialty.addEventListener('change', loadDiscovery);
     date.addEventListener('change', loadDiscovery);
     doctor.addEventListener('change', () => {
@@ -161,4 +157,8 @@
             bookingForm.querySelectorAll('input, select, textarea, button').forEach(control => control.disabled = true);
         } catch (error) { bookingStatus.textContent = error.message; }
     });
+    loadDiscovery();
+    if (window.location.hash === '#appointment-request') {
+        window.setTimeout(() => bookingSection.scrollIntoView({behavior: 'smooth'}), 150);
+    }
 })();

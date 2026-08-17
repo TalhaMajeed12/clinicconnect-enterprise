@@ -140,6 +140,11 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(self.client.get(f'/consultations/{appointment.id}').status_code, 403)
 
     def test_public_guided_booking_recommends_and_encrypts_intake(self):
+        homepage = self.client.get('/')
+        self.assertIn(b'id="appointment-request"', homepage.data)
+        self.assertIn(b'Send request to clinic staff', homepage.data)
+        chatbot = self.client.post('/chatbot/message', json={'message': 'I need an appointment'})
+        self.assertEqual(chatbot.get_json()['action'], 'guided_booking')
         target = (datetime.now() + timedelta(days=2)).date()
         discovery = self.client.get(
             f'/appointments/discovery?specialty=General+Medicine&date={target.isoformat()}'
