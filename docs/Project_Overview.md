@@ -1,79 +1,33 @@
-# ClinicConnect
+# ClinicConnect Enterprise
 
-## Project Description
+ClinicConnect Enterprise is a university Final Year Project demonstrating a clinic-management and Electronic Health Record workflow for private clinics. The current application supports three roles: administrator, clinician, and patient.
 
-ClinicConnect is a web-based Clinic Management System and Electronic Health Record (EHR) platform designed for private clinics and multi-branch healthcare organizations in Pakistan.
+## Implemented scope
 
-The system digitizes patient records, appointment scheduling, clinician workflows, billing, reporting, and administrative operations while maintaining security, scalability, and maintainability.
+- Role-specific authentication, authorization, logout, and inactive accounts
+- Administrator dashboards, clinician management, patient records, appointments, revenue summaries, and audit logs
+- Clinician patient folders, visits, prescriptions, appointments, availability, and full-day or partial-day time off
+- Patient dashboard, medical history, prescriptions, appointment booking and cancellation, and clearly labelled demo payment records
+- Conflict-aware scheduling using clinician hours, availability, and time off
+- Secure, single-use password reset links delivered by an HTTPS email API
+- Health and protected JSON API endpoints
 
----
+## Technology stack
 
-## Vision
+- Python 3 and Flask
+- SQLAlchemy and PostgreSQL
+- Flask-Login, Flask-WTF/CSRF, Flask-Limiter, and Flask-Session
+- Jinja templates, Bootstrap 5, CSS, and JavaScript
+- Gunicorn and Render
+- Optional Redis for shared sessions and rate limiting
+- Brevo HTTPS API for production transactional email
 
-To provide a secure, scalable, and user-friendly healthcare platform that improves clinic operations, enhances patient care, and replaces paper-based workflows with a centralized digital system.
+## Data and security
 
----
+Profile fields such as email, phone, and name are encrypted with Fernet. The `ENCRYPTION_KEY` must remain stable for the lifetime of existing encrypted data. Passwords are hashed, roles are enforced on server routes, sensitive forms use CSRF protection, and production responses include security headers.
 
-## Objectives
+Medical history is retained. Clinicians are deactivated rather than hard-deleted when historical relationships exist. The payment module is an FYP demo recorder and does not process real cards or bank transfers.
 
-- Digitize patient medical records.
-- Manage appointments efficiently.
-- Support clinicians during consultations.
-- Maintain secure Electronic Health Records (EHR).
-- Reduce administrative workload.
-- Improve reporting and analytics.
-- Support multi-branch clinic management.
-- Ensure patient privacy and data security.
+## Current version
 
----
-
-## Target Users
-
-- Super Administrator
-- Branch Administrator
-- Receptionist
-- Clinician
-- Patient
-- Accountant (Optional)
-- Laboratory Staff (Future)
-
----
-
-## Technology Stack
-
-### Backend
-- Python
-- Flask
-- SQLAlchemy
-- MySQL
-- Redis
-
-### Frontend
-- HTML5
-- Bootstrap 5
-- JavaScript
-- Jinja2
-
-### Deployment
-- Gunicorn
-- Nginx
-- Linux
-- Docker Ready
-
----
-
-## Deployment Region
-
-Primary target: Pakistan
-
-- PKR currency
-- CNIC support (optional)
-- Hospital-generated Patient ID
-- Multi-branch architecture
-- Future Urdu language support
-
----
-
-## Current Version
-
-Version 1.0
+Version 3.0.0
