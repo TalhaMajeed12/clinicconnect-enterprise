@@ -53,6 +53,8 @@
             addMessage(`${data.message}\n\n${data.disclaimer}`, 'assistant', data.emergency);
             if (data.action === 'guided_booking' && bookingForm) {
                 bookingForm.hidden = false;
+                panel.classList.add('guided-booking-open');
+                bookingToggle.innerHTML = '<i class="fas fa-arrow-left me-2"></i>Back to assistant';
                 loadDiscovery();
             }
         } catch (error) {
@@ -119,7 +121,14 @@
 
     bookingToggle.addEventListener('click', () => {
         bookingForm.hidden = !bookingForm.hidden;
-        if (!bookingForm.hidden) loadDiscovery();
+        panel.classList.toggle('guided-booking-open', !bookingForm.hidden);
+        bookingToggle.innerHTML = bookingForm.hidden
+            ? '<i class="fas fa-calendar-check me-2"></i>Find a doctor and request a slot'
+            : '<i class="fas fa-arrow-left me-2"></i>Back to assistant';
+        if (!bookingForm.hidden) {
+            bookingForm.scrollTop = 0;
+            loadDiscovery();
+        }
     });
     specialty.addEventListener('change', loadDiscovery);
     date.addEventListener('change', loadDiscovery);
