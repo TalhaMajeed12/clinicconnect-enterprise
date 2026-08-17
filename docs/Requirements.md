@@ -46,6 +46,8 @@ This document describes the implemented ClinicConnect Enterprise v3.0 FYP scope.
 ### Operations
 
 - PostgreSQL persistence and additive migrations
+- Guided appointment slot selection based on clinician schedules, leave, capacity, and existing bookings
+- Public bilingual newcomer FAQ assistant with privacy and clinical-safety boundaries
 - Health endpoint with database connectivity status
 - Brevo HTTPS transactional email on free Render hosting
 - Manual custom-format PostgreSQL backup procedure

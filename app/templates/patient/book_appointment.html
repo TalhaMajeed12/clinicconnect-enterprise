@@ -3,7 +3,7 @@
 {% block content %}
 <h1 class="h3 mb-3">Book an appointment</h1>
 {% if clinicians %}
-<form method="POST" class="card card-body shadow-sm">
+<form id="booking_form" method="POST" class="card card-body shadow-sm">
     <div class="mb-3">
         <label for="clinician_id" class="form-label">Clinician</label>
         <select id="clinician_id" name="clinician_id" class="form-select" required>
@@ -13,10 +13,18 @@
             {% endfor %}
         </select>
     </div>
-    <div class="mb-3">
-        <label for="appointment_date" class="form-label">Date and time</label>
-        <input id="appointment_date" name="appointment_date" type="datetime-local" class="form-control" required>
-        <div class="form-text">Your selection must fall within the clinician's working schedule.</div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-5">
+            <label for="slot_date" class="form-label">Appointment date</label>
+            <input id="slot_date" type="date" class="form-control" required>
+            <div class="form-text">Choose any date within the next 60 days.</div>
+        </div>
+        <div class="col-md-7">
+            <label class="form-label">Available time</label>
+            <input id="appointment_date" name="appointment_date" type="hidden" required>
+            <div id="slot_status" class="alert alert-light border mb-2">Choose a clinician and date to view available slots.</div>
+            <div id="slot_list" class="d-flex flex-wrap gap-2" role="radiogroup" aria-label="Available appointment times"></div>
+        </div>
     </div>
     <div class="mb-3"><label for="reason" class="form-label">Reason</label><textarea id="reason" name="reason" class="form-control" rows="2" required></textarea></div>
     <div class="mb-3"><label for="symptoms" class="form-label">Symptoms (optional)</label><textarea id="symptoms" name="symptoms" class="form-control" rows="2"></textarea></div>
@@ -25,4 +33,51 @@
 {% else %}
 <div class="alert alert-info">No clinicians are currently available for online booking.</div>
 {% endif %}
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+(() => {
+  const clinician = document.getElementById('clinician_id');
+  const date = document.getElementById('slot_date');
+  const selected = document.getElementById('appointment_date');
+  const list = document.getElementById('slot_list');
+  const status = document.getElementById('slot_status');
+  if (!clinician || !date || !selected || !list || !status) return;
+  const today = new Date();
+  const last = new Date(); last.setDate(last.getDate() + 60);
+  const localDate = value => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  date.min = localDate(today);
+  date.max = localDate(last);
+
+  const loadSlots = async () => {
+    selected.value = ''; list.replaceChildren();
+    if (!clinician.value || !date.value) {
+      status.textContent = 'Choose a clinician and date to view available slots.'; return;
+    }
+    status.textContent = 'Loading available slots…';
+    try {
+      const response = await fetch(`/appointments/slots?clinician_id=${encodeURIComponent(clinician.value)}&date=${encodeURIComponent(date.value)}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load slots');
+      if (!data.slots.length) { status.textContent = 'No slots are available on this date. Please choose another date.'; return; }
+      status.textContent = `${data.slots.length} available ${data.duration}-minute slots`;
+      data.slots.forEach(slot => {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'btn btn-outline-primary';
+        button.textContent = slot.label; button.dataset.value = slot.value;
+        button.addEventListener('click', () => {
+          list.querySelectorAll('button').forEach(item => item.className = 'btn btn-outline-primary');
+          button.className = 'btn btn-primary'; selected.value = slot.value;
+        });
+        list.appendChild(button);
+      });
+    } catch (error) { status.textContent = error.message; }
+  };
+  clinician.addEventListener('change', loadSlots); date.addEventListener('change', loadSlots);
+  document.getElementById('booking_form').addEventListener('submit', event => {
+    if (!selected.value) { event.preventDefault(); status.textContent = 'Please select an available time slot.'; status.className = 'alert alert-danger mb-2'; }
+  });
+})();
+</script>
 {% endblock %}

@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, session, request, redirect, url_for, flash
+from flask import Blueprint, render_template, session, request, redirect, url_for, flash, jsonify
 from app import db
-from app.models import ClinicianProfile, ClinicianTimeOff, Appointment, PatientProfile, User
+from app.models import ClinicianProfile, Appointment, PatientProfile, User
 from app.utils.translations import t
-from datetime import datetime
+from datetime import datetime, timedelta
+from app.utils.appointment_slots import available_slots, is_available_slot
 
 appointments_bp = Blueprint('appointments', __name__)
 
@@ -24,7 +25,10 @@ def book():
             flash(t('Please select a valid clinician, date, and time.'), 'danger')
             return redirect(url_for('appointments.book'))
 
-        clinician = ClinicianProfile.query.get(clinician_id)
+        # Serialize bookings for this clinician so two patients cannot claim the
+        # same slot between availability validation and commit on PostgreSQL.
+        clinician = (ClinicianProfile.query.filter_by(id=clinician_id)
+                     .with_for_update().first())
         if not clinician or not clinician.user or not clinician.user.is_active or not clinician.is_available:
             flash(t('The selected clinician is not available.'), 'danger')
             return redirect(url_for('appointments.book'))
@@ -32,39 +36,8 @@ def book():
             flash(t('Appointments must be booked in the future.'), 'danger')
             return redirect(url_for('appointments.book'))
 
-        working_days = [str(day).lower() for day in (clinician.working_days or [])]
-        hours = clinician.working_hours or {}
-        try:
-            start = datetime.strptime(hours.get('start', ''), '%H:%M').time()
-            end = datetime.strptime(hours.get('end', ''), '%H:%M').time()
-        except (TypeError, ValueError):
-            flash(t('The clinician schedule is not configured correctly.'), 'danger')
-            return redirect(url_for('appointments.book'))
-        if appointment_date.strftime('%A').lower() not in working_days or not (start <= appointment_date.time() < end):
-            flash(t('Please choose a time within the clinician working hours.'), 'danger')
-            return redirect(url_for('appointments.book'))
-
         duration = clinician.appointment_duration or 30
-        leave_entries = ClinicianTimeOff.query.filter(
-            ClinicianTimeOff.clinician_id == clinician.id,
-            ClinicianTimeOff.status == 'approved',
-            ClinicianTimeOff.start_date <= appointment_date.date(),
-            ClinicianTimeOff.end_date >= appointment_date.date(),
-        ).all()
-        if any(entry.blocks(appointment_date, duration) for entry in leave_entries):
-            flash(t('The clinician is on approved time off at that time.'), 'danger')
-            return redirect(url_for('appointments.book'))
-
-        requested_end = appointment_date.timestamp() + duration * 60
-        conflicts = Appointment.query.filter(
-            Appointment.clinician_id == clinician.id,
-            Appointment.status.notin_(['cancelled', 'completed', 'no_show'])
-        ).all()
-        if any(
-            appointment_date.timestamp() < existing.appointment_date.timestamp() + (existing.duration or 30) * 60
-            and requested_end > existing.appointment_date.timestamp()
-            for existing in conflicts
-        ):
+        if not is_available_slot(clinician, appointment_date):
             flash(t('That time is no longer available.'), 'danger')
             return redirect(url_for('appointments.book'))
         
@@ -86,4 +59,28 @@ def book():
     clinicians = (ClinicianProfile.query.join(User, ClinicianProfile.user_id == User.id)
                    .filter(ClinicianProfile.is_available.is_(True), User.is_active.is_(True), User.role == 'clinician')
                    .all())
-    return render_template('patient/book_appointment.html', clinicians=clinicians) 
+    return render_template('patient/book_appointment.html', clinicians=clinicians)
+
+
+@appointments_bp.get('/slots')
+def slots():
+    patient = PatientProfile.query.filter_by(user_id=session.get('user_id')).first()
+    if not patient:
+        return jsonify({'error': 'Authentication required'}), 401
+    clinician_id = request.args.get('clinician_id', type=int)
+    date_value = request.args.get('date', '').strip()
+    try:
+        target_date = datetime.strptime(date_value, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Choose a valid date'}), 400
+    clinician = db.session.get(ClinicianProfile, clinician_id)
+    if not clinician or not clinician.user or not clinician.user.is_active or not clinician.is_available:
+        return jsonify({'error': 'Clinician unavailable'}), 404
+    if target_date < datetime.now().date() or target_date > (datetime.now().date() + timedelta(days=60)):
+        return jsonify({'error': 'Date must be within the next 60 days'}), 400
+    items = available_slots(clinician, target_date)
+    return jsonify({
+        'duration': clinician.appointment_duration or 30,
+        'slots': [{'value': item.strftime('%Y-%m-%dT%H:%M'),
+                   'label': item.strftime('%I:%M %p')} for item in items],
+    })

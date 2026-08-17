@@ -41,3 +41,6 @@ After deploying, verify:
 8. Cross-role and altered-ID requests are rejected.
 
 Never run destructive fixtures or database initialization against production.
+# Slot booking and FAQ assistant
+
+Automated coverage verifies that occupied appointment times are removed from the slot API, valid configured times remain selectable, the public assistant answers newcomer FAQs, Urdu intent handling works, and emergency messages are escalated.

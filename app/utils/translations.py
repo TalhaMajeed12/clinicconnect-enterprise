@@ -106,6 +106,10 @@ TRANSLATIONS = {
     'chat_appointment_question': {'en': 'How do I book an appointment?', 'ur': 'میں اپوائنٹمنٹ کیسے بک کروں؟'},
     'chat_medication_question': {'en': 'I have a medication safety question', 'ur': 'مجھے دوا کی حفاظت کے بارے میں سوال ہے'},
     'chat_records_question': {'en': 'Where can I view my medical history?', 'ur': 'میں اپنی طبی تاریخ کہاں دیکھ سکتا ہوں؟'},
+    'chat_payment_question': {'en': 'How does payment work?', 'ur': 'ادائیگی کیسے ہوتی ہے؟'},
+    'chat_account_question': {'en': 'How do I get an account?', 'ur': 'مجھے اکاؤنٹ کیسے ملے گا؟'},
+    'payment_help': {'en': 'Payment', 'ur': 'ادائیگی'},
+    'account_help': {'en': 'New account', 'ur': 'نیا اکاؤنٹ'},
     'chat_welcome': {'en': 'Welcome! I can show new users how to use appointments, records, password recovery, and medication-safety guidance. I do not diagnose or access patient records.', 'ur': 'خوش آمدید! میں نئے صارفین کو اپوائنٹمنٹ، ریکارڈ، پاس ورڈ کی بحالی اور دوا کی حفاظت سمجھا سکتا ہوں۔ میں تشخیص یا مریض کا ریکارڈ نہیں دیکھتا۔'},
     'chat_error': {'en': 'The assistant is temporarily unavailable. For urgent concerns, contact local emergency services or a qualified clinician.', 'ur': 'معاون عارضی طور پر دستیاب نہیں۔ فوری مسئلے میں مقامی ایمرجنسی سروس یا مستند ڈاکٹر سے رابطہ کریں۔'},
     

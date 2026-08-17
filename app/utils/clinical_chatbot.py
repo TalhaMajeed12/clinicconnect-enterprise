@@ -35,6 +35,26 @@ URDU_MESSAGES = {
         'مریض لاگ ان صفحے پر پاس ورڈ بھول گئے کا استعمال کریں۔ اپنا پاس ورڈ یا '
         'ری سیٹ لنک چیٹ میں کبھی شیئر نہ کریں۔'
     ),
+    'registration': (
+        'مریض کی خود رجسٹریشن بند ہے۔ نیا مریض اکاؤنٹ بنانے کے لیے کلینک کے '
+        'ڈاکٹر یا ایڈمن سے رابطہ کریں۔ ڈاکٹر اور ایڈمن اکاؤنٹس صرف ایڈمن بناتا ہے۔'
+    ),
+    'payment': (
+        'وقت منتخب کرنے کے بعد ادائیگی کا صفحہ کھلتا ہے۔ موجودہ نظام تعلیمی ڈیمو '
+        'ادائیگی استعمال کرتا ہے؛ حقیقی کارڈ یا بینک کی معلومات درج نہ کریں۔'
+    ),
+    'privacy': (
+        'چیٹ بوٹ طبی ریکارڈ نہیں پڑھتا اور سوالات کو مریض کی فائل میں محفوظ نہیں کرتا۔ '
+        'چیٹ میں نام، شناختی نمبر، پاس ورڈ، تشخیص یا نجی طبی معلومات نہ لکھیں۔'
+    ),
+    'roles': (
+        'مریض اپوائنٹمنٹ اور تاریخ دیکھتے ہیں، ڈاکٹر مریضوں اور علاج کا انتظام کرتے ہیں، '
+        'اور ایڈمن صارفین، ڈاکٹرز اور آڈٹ ریکارڈ سنبھالتا ہے۔ درست لاگ ان صفحہ منتخب کریں۔'
+    ),
+    'language': (
+        'اوپر زبان کے مینو سے English یا اردو منتخب کریں۔ اردو منتخب کرنے پر مشترکہ '
+        'صفحات دائیں سے بائیں دکھائی دیتے ہیں۔'
+    ),
     'symptoms': (
         'میں علامات کی وجہ یا شدت طے نہیں کر سکتا۔ مستند ڈاکٹر سے اپوائنٹمنٹ لیں۔ '
         'اچانک یا شدید علامات، سینے میں درد، سانس کی شدید تکلیف، بے ہوشی، زیادہ '
@@ -117,13 +137,53 @@ def clinical_support_reply(message, language='en'):
                 'not read, summarize, or disclose anyone’s medical record.'
             ), False, language)
 
-    if _contains(text, ('password', 'forgot', 'login', 'account', 'پاس ورڈ',
-                        'لاگ ان', 'اکاؤنٹ')):
+    if _contains(text, ('password', 'forgot', 'login problem', 'cannot login',
+                        'پاس ورڈ', 'لاگ ان مسئلہ')):
         return _reply('account', (
                 'Use Forgot Password on the patient login page for a single-use reset '
                 'link. Clinician and admin account issues should be handled by an '
                 'administrator. Never share a password or reset link in chat.'
             ), False, language)
+
+    if _contains(text, ('register', 'registration', 'sign up', 'new patient',
+                        'new account', 'get an account', 'رجسٹر', 'رجسٹریشن',
+                        'نیا مریض', 'اکاؤنٹ')):
+        return _reply('registration', (
+            'Patient self-registration is disabled. Ask a clinic clinician or admin '
+            'to create your patient account. Clinician and admin accounts can only '
+            'be created or managed by an administrator.'
+        ), False, language)
+
+    if _contains(text, ('payment', 'pay', 'fee', 'card', 'deposit', 'refund',
+                        'ادائیگی', 'فیس', 'کارڈ', 'رقم', 'واپسی')):
+        return _reply('payment', (
+            'After selecting a slot, ClinicConnect opens the payment page. This FYP '
+            'currently uses a clearly labelled demo payment flow; do not enter real '
+            'card or banking details. Ask the clinic directly about refunds.'
+        ), False, language)
+
+    if _contains(text, ('privacy', 'private', 'safe', 'data', 'record chat',
+                        'رازداری', 'محفوظ', 'ڈیٹا', 'نجی')):
+        return _reply('privacy', (
+            'The chatbot cannot access medical records and chat questions are not '
+            'added to a patient file. Do not enter names, IDs, passwords, diagnoses, '
+            'or private medical information in chat.'
+        ), False, language)
+
+    if _contains(text, ('patient role', 'clinician role', 'admin role', 'who can',
+                        'کردار', 'مریض کیا', 'ڈاکٹر کیا', 'ایڈمن کیا')):
+        return _reply('roles', (
+            'Patients book appointments and view their history; clinicians manage '
+            'authorized patients and care; admins manage users, clinicians, and audit '
+            'records. Choose the matching login option on the home page.'
+        ), False, language)
+
+    if _contains(text, ('language', 'urdu', 'english', 'translate',
+                        'زبان', 'اردو', 'انگریزی')):
+        return _reply('language', (
+            'Use the language menu in the navigation bar to choose English or Urdu. '
+            'Shared pages switch to right-to-left layout when Urdu is selected.'
+        ), False, language)
 
     symptom_words = re.search(
         r'\b(pain|fever|cough|vomit|dizzy|rash|headache|weak|sick|symptom)\b', text

@@ -331,10 +331,31 @@ class CoreFlowTests(unittest.TestCase):
         self.assertFalse(medication.get_json()['emergency'])
         self.assertIn('Do not start, stop, double', medication.get_json()['message'])
 
+        faq = self.client.post('/chatbot/message', json={'message': 'How do I get a new account?'})
+        self.assertEqual(faq.get_json()['intent'], 'registration')
+        self.assertIn('self-registration is disabled', faq.get_json()['message'])
+
         self.client.get('/auth/change_language/ur')
         urdu = self.client.post('/chatbot/message', json={'message': 'اپوائنٹمنٹ کیسے بک کروں؟'})
         self.assertEqual(urdu.get_json()['intent'], 'appointment')
         self.assertIn('اپوائنٹمنٹ', urdu.get_json()['message'])
+
+    def test_slot_picker_only_returns_open_configured_times(self):
+        target = (datetime.now() + timedelta(days=2)).date()
+        booked = datetime.combine(target, datetime.strptime('10:00', '%H:%M').time())
+        db.session.add(Appointment(
+            patient_id=self.patient.id, clinician_id=self.clinician.id,
+            appointment_date=booked, duration=30, status='confirmed',
+        ))
+        db.session.commit()
+        self._session_as(self.patient_user)
+        response = self.client.get(
+            f'/appointments/slots?clinician_id={self.clinician.id}&date={target.isoformat()}'
+        )
+        self.assertEqual(response.status_code, 200)
+        values = [item['value'] for item in response.get_json()['slots']]
+        self.assertNotIn(booked.strftime('%Y-%m-%dT%H:%M'), values)
+        self.assertIn(datetime.combine(target, datetime.strptime('10:30', '%H:%M').time()).strftime('%Y-%m-%dT%H:%M'), values)
 
     def test_urdu_home_uses_rtl_and_translated_content(self):
         self.client.get('/auth/change_language/ur')
