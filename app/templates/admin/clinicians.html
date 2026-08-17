@@ -98,10 +98,10 @@ document.querySelectorAll('.toggle-clinician').forEach(btn => {
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Error: ' + data.error);
+                    showFeedback(data.error || 'Unable to update clinician status.', 'danger');
                 }
             })
-            .catch(err => alert('Error updating clinician'));
+            .catch(() => showFeedback('Unable to update clinician status.', 'danger'));
         }
     });
 });

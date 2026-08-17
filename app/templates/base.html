@@ -109,6 +109,7 @@
     </main>
     {% if session.get('user_id') %}</div>{% endif %}
 
+    {% if not (request.endpoint and request.endpoint.startswith('auth.')) %}
     <button id="clinical-chat-toggle" class="btn btn-primary clinical-chat-toggle" type="button" aria-controls="clinical-chat-panel" aria-expanded="false">
         <i class="fas fa-comment-medical" aria-hidden="true"></i>
         <span>{{ t('clinical_support') }}</span>
@@ -137,6 +138,7 @@
         </form>
         <p class="clinical-chat-privacy">{{ t('chat_privacy') }}</p>
     </section>
+    {% endif %}
     
     <!-- Footer -->
     <footer class="footer mt-5 py-5">

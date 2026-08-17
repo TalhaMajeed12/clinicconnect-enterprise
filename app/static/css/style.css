@@ -28,11 +28,27 @@ body { color: var(--cc-navy); }
 html { scroll-behavior: smooth; }
 main.container { max-width: 1240px; }
 
+/* Global responsive contract: content may shrink, media wraps, and only local
+   data regions (such as tables) may scroll horizontally. */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { max-width: 100%; width: 100%; }
+img, svg, video, canvas, iframe { height: auto; max-width: 100%; }
+pre, code, td, dd, .alert, .card, .clinical-chat-message { overflow-wrap: anywhere; word-break: break-word; }
+.container, .container-fluid, .row, .row > *, .card, .card-body, .page-heading, .page-heading > *, .table-responsive { min-width: 0; }
+.container-fluid { max-width: 100%; }
+.table-responsive { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.table-responsive > .table { margin-bottom: 0; width: 100%; }
+.clinical-chat-form > .form-control { min-width: 0; }
+.modal-dialog { margin-left: auto; margin-right: auto; max-width: min(700px, calc(100% - 2rem)); }
+.modal-content { max-height: calc(100dvh - 2rem); overflow-y: auto; }
+
 .portal-shell {
     display: flex;
     margin: 0 auto;
     max-width: 1540px;
     min-height: calc(100vh - 76px);
+    min-width: 0;
+    width: 100%;
 }
 
 .portal-sidebar {
@@ -49,7 +65,10 @@ main.container { max-width: 1240px; }
     top: 92px;
 }
 
-.portal-content { flex: 1 1 auto; min-width: 0; padding-left: 1.5rem; padding-right: 1.5rem; }
+/* Bootstrap gives .container width:100%; inside this flex shell that used to
+   mean sidebar width + 100% content width. A zero flex basis lets the main
+   panel consume only the remaining space. */
+.portal-shell > .portal-content { flex: 1 1 0%; max-width: none; min-width: 0; padding-left: 1.5rem; padding-right: 1.5rem; width: 0; }
 .portal-identity { align-items: center; border-bottom: 1px solid var(--cc-border); display: flex; gap: .7rem; padding: .4rem .35rem 1rem; }
 .portal-identity strong, .portal-identity small { display: block; max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .portal-identity small { color: var(--cc-text-muted); font-size: .76rem; }
@@ -92,6 +111,8 @@ main.container { max-width: 1240px; }
 .management-links a > i:first-child { color: var(--cc-primary); font-size: 1.2rem; text-align: center; }
 .management-links strong, .management-links small { display: block; }
 .management-links small { color: var(--cc-text-muted); }
+.appointment-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .35rem; min-width: 10rem; }
+.appointment-actions .status-select { flex: 1 1 8.5rem; width: auto; }
 .error-state { margin: clamp(2rem, 8vh, 6rem) auto; max-width: 44rem; text-align: center; }
 .error-state .card-body { padding: clamp(2rem, 6vw, 4rem); }
 .error-state .error-code { color: #a2b3b7; display: block; font-size: .8rem; font-weight: 800; letter-spacing: .18em; }
@@ -470,6 +491,7 @@ h3 {
 }
 
 @media (max-width: 991.98px) {
+    .portal-shell > .portal-content { padding-left: 1rem; padding-right: 1rem; width: 100%; }
     .navbar-collapse {
         padding: 0.75rem 0;
     }
@@ -489,6 +511,11 @@ h3 {
     .card-body {
         padding: 1rem;
     }
+
+    .page-heading { align-items: stretch !important; }
+    .page-heading .btn { width: 100%; }
+    .table-responsive { margin-inline: 0; }
+    .quick-actions { grid-template-columns: 1fr; }
 
     .btn {
         margin-bottom: 0.25rem;

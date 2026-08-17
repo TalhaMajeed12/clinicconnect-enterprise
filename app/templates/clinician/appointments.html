@@ -50,23 +50,23 @@
                                 <td>{{ appointment.reason or 'N/A' }}</td>
                                 <td>{{ status_badge(appointment.status) }}</td>
                                 <td>
-                                    <select class="form-control form-control-sm status-select" data-id="{{ appointment.id }}" style="width: 120px; display: inline-block;">
-                                        <option value="pending" {% if appointment.status == 'pending' %}selected{% endif %}>Pending</option>
-                                        <option value="confirmed" {% if appointment.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
-                                        <option value="checked_in" {% if appointment.status == 'checked_in' %}selected{% endif %}>Checked In</option>
-                                        <option value="completed" {% if appointment.status == 'completed' %}selected{% endif %}>Completed</option>
-                                        <option value="cancelled" {% if appointment.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
-                                        <option value="rejected" {% if appointment.status == 'rejected' %}selected{% endif %}>Rejected</option>
-                                        <option value="no_show" {% if appointment.status == 'no_show' %}selected{% endif %}>No Show</option>
+                                    <div class="appointment-actions">
+                                    <select class="form-select form-select-sm status-select" data-id="{{ appointment.id }}" data-previous="{{ appointment.status }}" aria-label="Update appointment status">
+                                        <option value="{{ appointment.status }}" selected>{{ appointment.status|replace('_', ' ')|title }}</option>
+                                        {% if appointment.status == 'pending' %}<option value="confirmed">Confirm</option><option value="rejected">Reject</option><option value="cancelled">Cancel</option>
+                                        {% elif appointment.status == 'confirmed' %}<option value="checked_in">Check in</option><option value="cancelled">Cancel</option><option value="no_show">No show</option>
+                                        {% elif appointment.status == 'checked_in' %}<option value="completed">Complete</option>
+                                        {% endif %}
                                     </select>
-                                    <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-eye"></i>
+                                    <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-info" title="View patient">
+                                        <i class="fas fa-eye"></i><span class="visually-hidden">View patient</span>
                                     </a>
-                                    {% if appointment.status != 'cancelled' %}
+                                    {% if appointment.status in ['confirmed', 'checked_in'] %}
                                     <a href="{{ url_for('consultations.room', appointment_id=appointment.id) }}" class="btn btn-sm btn-primary" title="Open video consultation and secure messages">
-                                        <i class="fas fa-video"></i>
+                                        <i class="fas fa-video"></i><span class="visually-hidden">Open consultation</span>
                                     </a>
                                     {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -85,7 +85,7 @@ document.querySelectorAll('.status-select').forEach(select => {
     select.addEventListener('change', function() {
         const appointmentId = this.dataset.id;
         const status = this.value;
-        const previous = this.dataset.previous || this.querySelector('option[selected]')?.value || 'pending';
+        const previous = this.dataset.previous || 'pending';
         if (['cancelled', 'rejected', 'no_show'].includes(status) && !confirm(`Change this appointment to ${status.replace('_', ' ')}?`)) {
             this.value = previous; return;
         }
