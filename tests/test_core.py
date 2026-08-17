@@ -3,7 +3,7 @@ import re
 import json
 from unittest.mock import patch
 from urllib.parse import urlparse
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from app import create_app
 from app.extensions import db
@@ -282,6 +282,54 @@ class CoreFlowTests(unittest.TestCase):
             'Authorization': f"Bearer {login['token']}"
         })
         self.assertEqual(response.status_code, 403)
+
+    def test_patient_search_disambiguates_duplicate_names(self):
+        other_user = self._user(
+            'patient-two', 'patient', 'second@example.test', '+92 300 555 0101'
+        )
+        self.patient_user.full_name = 'Shared Patient'
+        self.patient_user.date_of_birth = date(1990, 1, 2)
+        other_user.full_name = 'Shared Patient'
+        other_user.date_of_birth = date(2001, 3, 4)
+        other = PatientProfile(user_id=other_user.id)
+        db.session.add(other)
+        db.session.commit()
+        self._session_as(self.admin)
+
+        duplicate_names = self.client.get('/admin/patients?search=Shared+Patient')
+        self.assertIn(f'CC-P{self.patient.id:06d}'.encode(), duplicate_names.data)
+        self.assertIn(f'CC-P{other.id:06d}'.encode(), duplicate_names.data)
+
+        by_reference = self.client.get(
+            f'/admin/patients?search=CC-P{other.id:06d}'
+        )
+        self.assertIn(b'second@example.test', by_reference.data)
+        self.assertNotIn(b'patient@example.test', by_reference.data)
+
+        by_dob = self.client.get('/admin/patients?search=2001-03-04')
+        self.assertIn(b'second@example.test', by_dob.data)
+        self.assertNotIn(b'patient@example.test', by_dob.data)
+
+    def test_clinical_chatbot_is_authenticated_and_escalates_emergencies(self):
+        unauthenticated = self.client.post(
+            '/chatbot/message', json={'message': 'How do I book?'}
+        )
+        self.assertEqual(unauthenticated.status_code, 401)
+
+        self._session_as(self.patient_user)
+        emergency = self.client.post(
+            '/chatbot/message', json={'message': 'I have chest pain and cannot breathe'}
+        )
+        self.assertEqual(emergency.status_code, 200)
+        self.assertTrue(emergency.get_json()['emergency'])
+        self.assertEqual(emergency.get_json()['intent'], 'emergency')
+        self.assertIn('emergency service', emergency.get_json()['message'])
+
+        medication = self.client.post(
+            '/chatbot/message', json={'message': 'Should I change my medicine dose?'}
+        )
+        self.assertFalse(medication.get_json()['emergency'])
+        self.assertIn('Do not start, stop, double', medication.get_json()['message'])
 
     def test_booking_rejects_full_day_time_off(self):
         slot = (datetime.utcnow() + timedelta(days=3)).replace(hour=10, minute=0, second=0, microsecond=0)

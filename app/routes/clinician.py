@@ -4,6 +4,7 @@ from app.models import (User, PatientProfile, ClinicianProfile, ClinicianTimeOff
                         Appointment, Visit, Prescription, Attendance)
 from datetime import datetime, date
 import traceback
+from app.utils.patient_search import search_patients
 
 clinician_bp = Blueprint('clinician', __name__)
 
@@ -103,17 +104,11 @@ def patients_list():
 
     try:
         clinician = get_clinician()
-        search = request.args.get('search', '')
+        search = request.args.get('search', '').strip()
 
         query = PatientProfile.query.join(User)
 
-        if search:
-            term = search.casefold()
-            patients = [patient for patient in query.all() if patient.user and term in ' '.join([
-                patient.user.full_name or '', patient.user.phone or '', patient.user.email or ''
-            ]).casefold()]
-        else:
-            patients = query.all()
+        patients = search_patients(query, search)
 
         return render_template(
             'clinician/patients_list.html',

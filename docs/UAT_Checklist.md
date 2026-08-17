@@ -47,6 +47,8 @@ Use disposable demonstration records. Never place real patient information in sc
 - [ ] Cross-role dashboard requests are rejected or redirected.
 - [ ] Public registration is unavailable.
 - [ ] Reusing an expired/used reset link fails safely.
+- [ ] Chatbot rejects logged-out requests and escalates emergency red-flag text.
+- [ ] Duplicate-name patients remain distinguishable by patient number and date of birth.
 - [ ] No password, reset token, database URL, or API key appears in logs.
 
 ## Acceptance record
@@ -58,6 +60,6 @@ Use disposable demonstration records. Never place real patient information in sc
 | Git commit | |
 | Render deployment | |
 | Database health | |
-| Automated tests | 18 passed |
+| Automated tests | 20 passed |
 | Overall result | PASS / PARTIAL / FAIL |
 | Notes | |

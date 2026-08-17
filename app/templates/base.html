@@ -101,6 +101,31 @@
     <main class="container mt-4">
         {% block content %}{% endblock %}
     </main>
+
+    {% if session.get('user_id') %}
+    <button id="clinical-chat-toggle" class="btn btn-primary clinical-chat-toggle" type="button" aria-controls="clinical-chat-panel" aria-expanded="false">
+        <i class="fas fa-comment-medical" aria-hidden="true"></i>
+        <span>Clinical Support</span>
+    </button>
+    <section id="clinical-chat-panel" class="clinical-chat-panel" aria-label="Clinical support assistant" hidden>
+        <header class="clinical-chat-header">
+            <div><strong>Clinical Support</strong><small>General guidance only</small></div>
+            <button id="clinical-chat-close" class="btn-close btn-close-white" type="button" aria-label="Close assistant"></button>
+        </header>
+        <div id="clinical-chat-messages" class="clinical-chat-messages" aria-live="polite"></div>
+        <div class="clinical-chat-suggestions" aria-label="Suggested questions">
+            <button type="button" data-chat-question="How do I book an appointment?">Appointments</button>
+            <button type="button" data-chat-question="I have a medication safety question">Medication safety</button>
+            <button type="button" data-chat-question="Where can I view my medical history?">Records</button>
+        </div>
+        <form id="clinical-chat-form" class="clinical-chat-form">
+            <label class="visually-hidden" for="clinical-chat-input">Ask the clinical support assistant</label>
+            <input id="clinical-chat-input" class="form-control" maxlength="1000" autocomplete="off" placeholder="Ask a general question…" required>
+            <button class="btn btn-primary" type="submit" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
+        </form>
+        <p class="clinical-chat-privacy">Do not enter names, IDs, diagnoses, or other private medical details.</p>
+    </section>
+    {% endif %}
     
     <!-- Footer -->
     <footer class="footer mt-5 py-4 bg-light border-top">
@@ -128,6 +153,9 @@
             }
         });
     </script>
+    {% if session.get('user_id') %}
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+    {% endif %}
     
     <!-- ============================================
     UNIVERSAL SESSION FIX - Back button prevention

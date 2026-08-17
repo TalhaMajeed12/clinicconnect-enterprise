@@ -18,6 +18,7 @@ The app does not create tables or bootstrap an administrator during startup. Thi
 - Admin: dashboard metrics, patient/clinician records, appointments, soft activation/deactivation, and audit logs.
 - Clinician: dashboard, patients, visits, prescriptions, appointments, availability, and time off.
 - Patient: login, dashboard, history/prescriptions, booking, cancellation, and demo payment records. Public self-registration is disabled by default.
+- Clinical support assistant: authenticated appointment/account guidance, medication-safety prompts, and emergency escalation without diagnosis or EHR access.
 
 Sensitive profile fields are encrypted. The current compatibility lookup decrypts and compares identifiers in application code because Fernet ciphertext is randomized. A future migration should add normalized keyed lookup hashes for indexed search.
 

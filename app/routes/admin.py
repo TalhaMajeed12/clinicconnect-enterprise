@@ -4,6 +4,7 @@ from app.models import User, PatientProfile, ClinicianProfile, Appointment, Paym
 from datetime import datetime
 from sqlalchemy import func
 import traceback
+from app.utils.patient_search import search_patients
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -58,16 +59,9 @@ def patients():
         return redirect(url_for('auth.admin_login'))
 
     try:
-        search = request.args.get('search', '')
+        search = request.args.get('search', '').strip()
         query = PatientProfile.query.join(User)
-
-        if search:
-            term = search.casefold()
-            patients = [patient for patient in query.all() if patient.user and term in ' '.join([
-                patient.user.full_name or '', patient.user.phone or '', patient.user.email or ''
-            ]).casefold()]
-        else:
-            patients = query.all()
+        patients = search_patients(query, search)
 
         return render_template(
             'admin/patients.html',

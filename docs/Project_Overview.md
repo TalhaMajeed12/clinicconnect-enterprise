@@ -11,6 +11,8 @@ ClinicConnect Enterprise is a university Final Year Project demonstrating a clin
 - Conflict-aware scheduling using clinician hours, availability, and time off
 - Secure, single-use password reset links delivered by an HTTPS email API
 - Health and protected JSON API endpoints
+- Multi-field patient search with stable patient numbers for duplicate-name disambiguation
+- Authenticated safety-first clinical support chatbot with emergency escalation
 
 ## Technology stack
 

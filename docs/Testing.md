@@ -24,6 +24,8 @@ The current suite covers:
 - Single-use, non-enumerating password recovery
 - Brevo HTTPS transport without real network delivery
 - Restricted API CORS and HTTP security headers
+- Duplicate-name patient search and patient-number disambiguation
+- Chatbot authentication, medication safety, and emergency escalation
 
 ## Manual production smoke test
 

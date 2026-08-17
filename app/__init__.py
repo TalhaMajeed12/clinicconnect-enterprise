@@ -122,6 +122,7 @@ def create_app(config_name='default'):
     from app.routes.appointments import appointments_bp
     from app.routes.payment import payment_bp
     from app.routes.api import api_bp
+    from app.routes.chatbot import chatbot_bp
     csrf.exempt(api_bp)
     
     app.register_blueprint(main_bp)
@@ -132,6 +133,7 @@ def create_app(config_name='default'):
     app.register_blueprint(appointments_bp, url_prefix='/appointments')
     app.register_blueprint(payment_bp, url_prefix='/payment')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(chatbot_bp, url_prefix='/chatbot')
     
     # Error handlers
     register_error_handlers(app)

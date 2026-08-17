@@ -49,6 +49,8 @@ This document describes the implemented ClinicConnect Enterprise v3.0 FYP scope.
 - Health endpoint with database connectivity status
 - Brevo HTTPS transactional email on free Render hosting
 - Manual custom-format PostgreSQL backup procedure
+- Search patients by patient number, name, username, email, phone, UUID fragment, or date of birth
+- Authenticated clinical support chatbot for navigation, medication safety, and emergency escalation
 
 ## Non-functional requirements
 
@@ -65,7 +67,7 @@ This document describes the implemented ClinicConnect Enterprise v3.0 FYP scope.
 - Filesystem sessions and in-memory rate limits require one Gunicorn worker.
 - Encrypted-field compatibility search is application-level rather than indexed.
 - Public self-registration is disabled; authorized staff create accounts.
-- The placeholder chatbot is not presented as a clinical decision system.
+- The chatbot is deterministic and informational; it does not diagnose, prescribe, access EHR data, or replace a clinician.
 
 ## Future work
 
