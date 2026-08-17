@@ -8,7 +8,8 @@ from datetime import date, datetime, timedelta
 from app import create_app
 from app.extensions import db
 from app.models import (Appointment, AuditLog, ClinicianProfile, ClinicianTimeOff,
-                        ConsultationMessage, PasswordResetToken, PatientProfile, User)
+                        ConsultationMessage, DoctorReview, GuestAppointmentRequest,
+                        PasswordResetToken, PatientProfile, User)
 
 
 class CoreFlowTests(unittest.TestCase):
@@ -137,6 +138,64 @@ class CoreFlowTests(unittest.TestCase):
         db.session.commit()
         self._session_as(other_user)
         self.assertEqual(self.client.get(f'/consultations/{appointment.id}').status_code, 403)
+
+    def test_public_guided_booking_recommends_and_encrypts_intake(self):
+        target = (datetime.now() + timedelta(days=2)).date()
+        discovery = self.client.get(
+            f'/appointments/discovery?specialty=General+Medicine&date={target.isoformat()}'
+        )
+        self.assertEqual(discovery.status_code, 200)
+        doctor = discovery.get_json()['doctors'][0]
+        self.assertEqual(doctor['id'], self.clinician.id)
+        self.assertTrue(doctor['slots'])
+
+        response = self.client.post('/appointments/request', json={
+            'full_name': 'Guest Patient', 'phone': '03001234567',
+            'email': 'guest@example.test', 'date_of_birth': '1995-04-12',
+            'specialty': 'General Medicine', 'clinician_id': self.clinician.id,
+            'preferred_at': doctor['slots'][0]['value'], 'reason': 'Routine consultation',
+        })
+        self.assertEqual(response.status_code, 201)
+        item = GuestAppointmentRequest.query.one()
+        self.assertEqual(item.full_name, 'Guest Patient')
+        self.assertNotIn('Guest Patient', item._full_name)
+        self.assertNotIn('03001234567', item._phone)
+        self.assertIn('reference', response.get_json())
+
+        self._session_as(self.admin)
+        staff_page = self.client.get('/admin/intake-requests')
+        self.assertEqual(staff_page.status_code, 200)
+        self.assertIn(b'Guest Patient', staff_page.data)
+        converted = self.client.post(
+            f'/admin/intake-requests/{item.id}/convert',
+            data={'username': 'guestpatient', 'temporary_password': 'Temporary123!'},
+        )
+        self.assertEqual(converted.status_code, 302)
+        db.session.refresh(item)
+        self.assertEqual(item.status, 'converted')
+        self.assertIsNotNone(item.patient_id)
+        self.assertEqual(item.appointment.status, 'pending')
+        self.assertIsNotNone(User.query.filter_by(username='guestpatient').first())
+
+    def test_only_patient_with_completed_appointment_can_review_once(self):
+        appointment = Appointment(
+            patient_id=self.patient.id, clinician_id=self.clinician.id,
+            appointment_date=datetime.utcnow() - timedelta(days=1), status='completed'
+        )
+        db.session.add(appointment)
+        db.session.commit()
+        self._session_as(self.patient_user)
+        response = self.client.post(
+            f'/appointments/{appointment.id}/review',
+            data={'rating': '5', 'comment': 'Clear and helpful consultation.'},
+        )
+        self.assertEqual(response.status_code, 302)
+        review = DoctorReview.query.one()
+        self.assertEqual(review.rating, 5)
+        self.assertNotIn('Clear and helpful', review._comment)
+        self.assertEqual(self.clinician.average_rating, 5.0)
+        self.client.post(f'/appointments/{appointment.id}/review', data={'rating': '1'})
+        self.assertEqual(DoctorReview.query.count(), 1)
 
     def test_booking_rejects_conflict(self):
         slot = (datetime.utcnow() + timedelta(days=2)).replace(second=0, microsecond=0)

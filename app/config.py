@@ -91,6 +91,7 @@ class Config:
     VIDEO_CONSULTATION_BASE_URL = os.environ.get(
         'VIDEO_CONSULTATION_BASE_URL', 'https://meet.jit.si'
     )
+    CLINIC_PHONE = os.environ.get('CLINIC_PHONE', '+92 300 0000000')
     
     # Logging
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')

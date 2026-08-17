@@ -1,13 +1,100 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from app import db
-from app.models import User, PatientProfile, ClinicianProfile, Appointment, Payment, AuditLog
+from app.models import (User, PatientProfile, ClinicianProfile, Appointment, Payment,
+                        AuditLog, GuestAppointmentRequest)
 from datetime import datetime, timedelta
 from uuid import uuid4
 from sqlalchemy import func
 import traceback
 from app.utils.patient_search import search_patients_by_fields
+from app.utils.appointment_slots import is_available_slot
 
 admin_bp = Blueprint('admin', __name__)
+
+
+@admin_bp.route('/intake-requests')
+def intake_requests():
+    if not is_admin():
+        return redirect(url_for('auth.admin_login'))
+    status = request.args.get('status', 'new')
+    query = GuestAppointmentRequest.query
+    if status != 'all':
+        query = query.filter_by(status=status)
+    items = query.order_by(GuestAppointmentRequest.created_at.desc()).all()
+    return render_template('admin/intake_requests.html', items=items, status=status)
+
+
+@admin_bp.post('/intake-requests/<int:request_id>/convert')
+def convert_intake_request(request_id):
+    if not is_admin():
+        return redirect(url_for('auth.admin_login'))
+    item = db.session.get(GuestAppointmentRequest, request_id)
+    if not item:
+        return render_template('errors/404.html'), 404
+    if item.status == 'converted':
+        flash('This request has already been converted.', 'warning')
+        return redirect(url_for('admin.intake_requests'))
+    username = request.form.get('username', '').strip()
+    temporary_password = request.form.get('temporary_password', '')
+    if len(username) < 4 or len(temporary_password) < 10:
+        flash('Use a username of at least 4 characters and temporary password of at least 10.', 'warning')
+        return redirect(url_for('admin.intake_requests'))
+    if User.query.filter(func.lower(User.username) == username.casefold()).first():
+        flash('That username is already in use.', 'warning')
+        return redirect(url_for('admin.intake_requests'))
+    if User.find_by_identifier(item.email) or User.find_by_identifier(item.phone):
+        flash('A patient account already uses this email or phone. Link the request manually.', 'warning')
+        return redirect(url_for('admin.intake_requests'))
+    clinician = item.clinician
+    if not clinician or not is_available_slot(clinician, item.preferred_at):
+        flash('The requested slot is no longer available. Contact the patient with alternatives.', 'warning')
+        return redirect(url_for('admin.intake_requests'))
+    user = User(
+        username=username, role='patient', full_name=item.full_name,
+        email=item.email or f'{username}@pending.clinicconnect.local',
+        phone=item.phone, date_of_birth=item.date_of_birth,
+        is_active=True, is_verified=True,
+    )
+    user.set_password(temporary_password)
+    db.session.add(user)
+    db.session.flush()
+    patient = PatientProfile(user_id=user.id)
+    db.session.add(patient)
+    db.session.flush()
+    appointment = Appointment(
+        patient_id=patient.id, clinician_id=clinician.id,
+        appointment_date=item.preferred_at,
+        duration=clinician.appointment_duration or 30,
+        status='pending', reason=item.reason,
+    )
+    db.session.add(appointment)
+    db.session.flush()
+    item.patient_id = patient.id
+    item.appointment_id = appointment.id
+    item.status = 'converted'
+    db.session.add(AuditLog(
+        user_id=session.get('user_id'), action='guest_request_converted',
+        resource_type='appointment_request', resource_id=item.id,
+        details={'appointment_id': appointment.id},
+    ))
+    db.session.commit()
+    flash('Patient portal and pending appointment created. Give credentials by phone; patient must change the temporary password and complete payment.', 'success')
+    return redirect(url_for('admin.intake_requests', status='all'))
+
+
+@admin_bp.post('/intake-requests/<int:request_id>/status')
+def update_intake_status(request_id):
+    if not is_admin():
+        return redirect(url_for('auth.admin_login'))
+    item = db.session.get(GuestAppointmentRequest, request_id)
+    status = request.form.get('status')
+    if not item or status not in {'new', 'contacted', 'closed'} or item.status == 'converted':
+        flash('Unable to update that request.', 'warning')
+    else:
+        item.status = status
+        db.session.commit()
+        flash('Request status updated.', 'success')
+    return redirect(url_for('admin.intake_requests', status='all'))
 
 def is_admin():
     user_id = session.get('user_id')

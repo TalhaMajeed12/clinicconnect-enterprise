@@ -44,6 +44,7 @@
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['admin.patients', 'admin.patient_detail'] }}" href="{{ url_for('admin.patients') }}"><i class="fas fa-users"></i> {{ t('patients') }}</a></li>
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['admin.clinicians', 'admin.clinician_detail', 'admin.add_clinician', 'admin.edit_clinician'] }}" href="{{ url_for('admin.clinicians') }}"><i class="fas fa-user-md"></i> {{ t('clinicians') }}</a></li>
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.appointments' }}" href="{{ url_for('admin.appointments') }}"><i class="fas fa-calendar-check"></i> {{ t('appointments') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.intake_requests' }}" href="{{ url_for('admin.intake_requests') }}"><i class="fas fa-clipboard-check"></i> Intake</a></li>
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.audit_logs' }}" href="{{ url_for('admin.audit_logs') }}"><i class="fas fa-history"></i> {{ t('audit_logs') }}</a></li>
                         {% elif session.get('role') == 'clinician' %}
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.dashboard' }}" href="{{ url_for('clinician.dashboard') }}"><i class="fas fa-chart-pie"></i> {{ t('dashboard') }}</a></li>
@@ -121,6 +122,25 @@
             <button type="button" data-chat-question="{{ t('chat_payment_question') }}">{{ t('payment_help') }}</button>
             <button type="button" data-chat-question="{{ t('chat_account_question') }}">{{ t('account_help') }}</button>
         </div>
+        {% if not session.get('user_id') %}
+        <button id="guided-booking-toggle" class="btn btn-outline-primary mx-3 mb-2" type="button"><i class="fas fa-calendar-check me-2"></i>Find a doctor and request a slot</button>
+        <form id="guided-booking-form" class="guided-booking-form" hidden>
+            <p class="small text-muted">This protected form sends details to clinic staff. Do not include passwords, payment cards, identity numbers, or detailed medical history.</p>
+            <div class="row g-2">
+                <div class="col-6"><label for="guided-specialty">Specialty</label><select id="guided-specialty" class="form-select" required><option value="">Choose</option></select></div>
+                <div class="col-6"><label for="guided-date">From date</label><input id="guided-date" class="form-control" type="date" required></div>
+                <div class="col-12"><label for="guided-doctor">Available doctor</label><select id="guided-doctor" class="form-select" required><option value="">Choose specialty and date</option></select></div>
+                <div class="col-12"><label for="guided-slot">Preferred slot</label><select id="guided-slot" class="form-select" required><option value="">Choose a doctor</option></select></div>
+                <div class="col-12"><label for="guided-name">Full name</label><input id="guided-name" class="form-control" maxlength="150" required></div>
+                <div class="col-6"><label for="guided-dob">Date of birth</label><input id="guided-dob" class="form-control" type="date" required></div>
+                <div class="col-6"><label for="guided-phone">Phone</label><input id="guided-phone" class="form-control" type="tel" maxlength="40" required></div>
+                <div class="col-12"><label for="guided-email">Email (optional)</label><input id="guided-email" class="form-control" type="email" maxlength="254"></div>
+                <div class="col-12"><label for="guided-reason">Brief reason (optional)</label><textarea id="guided-reason" class="form-control" rows="2" maxlength="1000"></textarea></div>
+            </div>
+            <div id="guided-booking-status" class="small mt-2" aria-live="polite"></div>
+            <button class="btn btn-primary w-100 mt-2" type="submit">Send request to clinic staff</button>
+        </form>
+        {% endif %}
         <form id="clinical-chat-form" class="clinical-chat-form">
             <label class="visually-hidden" for="clinical-chat-input">Ask the clinical support assistant</label>
             <input id="clinical-chat-input" class="form-control" maxlength="1000" autocomplete="off" placeholder="{{ t('ask_general_question') }}" required>

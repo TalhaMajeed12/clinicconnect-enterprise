@@ -2,6 +2,7 @@
 {% block title %}Book Appointment{% endblock %}
 {% block content %}
 <h1 class="h3 mb-3">Book an appointment</h1>
+<form method="GET" class="card card-body mb-3"><div class="row g-2 align-items-end"><div class="col-md-9"><label class="form-label" for="specialty_filter">Doctor category / specialty</label><select class="form-select" id="specialty_filter" name="specialty"><option value="">All specialties</option>{% for specialty in specialties %}<option value="{{ specialty }}" {% if specialty == selected_specialty %}selected{% endif %}>{{ specialty }}</option>{% endfor %}</select></div><div class="col-md-3"><button class="btn btn-outline-primary w-100">Show doctors</button></div></div></form>
 {% if clinicians %}
 <form id="booking_form" method="POST" class="card card-body shadow-sm">
     <div class="mb-3">
@@ -9,7 +10,7 @@
         <select id="clinician_id" name="clinician_id" class="form-select" required>
             <option value="">Choose a clinician</option>
             {% for clinician in clinicians %}
-            <option value="{{ clinician.id }}">Dr. {{ clinician.user.full_name }} — {{ clinician.specialty }} (PKR {{ clinician.consultation_fee }})</option>
+            <option value="{{ clinician.id }}">Dr. {{ clinician.user.full_name }} — {{ clinician.specialty }} — {{ '%.1f'|format(clinician.average_rating or 0) }}★ / {{ clinician.total_reviews or 0 }} reviews (PKR {{ clinician.consultation_fee }})</option>
             {% endfor %}
         </select>
     </div>

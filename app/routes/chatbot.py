@@ -17,7 +17,10 @@ def message():
     if len(user_message) > 1000:
         return jsonify({'error': 'Message is too long'}), 400
 
-    return jsonify(clinical_support_reply(
+    reply = clinical_support_reply(
         user_message,
         language=session.get('language', 'en'),
-    ))
+    )
+    if reply.get('intent') == 'appointment' and not session.get('user_id'):
+        reply['action'] = 'guided_booking'
+    return jsonify(reply)

@@ -505,3 +505,19 @@ main.container { max-width: 1240px; }
     .consultation-messages-card { min-height: 540px; }
     .consultation-messages { height: 390px; }
 }
+.guided-booking-form {
+    margin: 0 .9rem .75rem;
+    padding: .9rem;
+    overflow-y: auto;
+    max-height: 58vh;
+    border: 1px solid #d7e8e4;
+    border-radius: 1rem;
+    background: #f8fbfa;
+}
+
+.guided-booking-form label {
+    margin-bottom: .2rem;
+    color: #31535c;
+    font-size: .75rem;
+    font-weight: 700;
+}

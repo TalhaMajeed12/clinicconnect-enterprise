@@ -1,11 +1,35 @@
-from flask import Blueprint, render_template, session, request, redirect, url_for, flash, jsonify
+from flask import (Blueprint, current_app, render_template, session, request,
+                   redirect, url_for, flash, jsonify)
 from app import db
-from app.models import ClinicianProfile, Appointment, PatientProfile, User
+from app.extensions import limiter
+from app.models import (ClinicianProfile, Appointment, PatientProfile, User,
+                        DoctorReview, GuestAppointmentRequest)
 from app.utils.translations import t
 from datetime import datetime, timedelta
+from secrets import token_hex
+from sqlalchemy import func
 from app.utils.appointment_slots import available_slots, is_available_slot
 
 appointments_bp = Blueprint('appointments', __name__)
+
+
+def _active_clinicians(specialty=None):
+    query = (ClinicianProfile.query.join(User, ClinicianProfile.user_id == User.id)
+             .filter(ClinicianProfile.is_available.is_(True), User.is_active.is_(True),
+                     User.role == 'clinician'))
+    if specialty:
+        query = query.filter(func.lower(ClinicianProfile.specialty) == specialty.casefold())
+    return query.order_by(ClinicianProfile.average_rating.desc(), User.username.asc()).all()
+
+
+def _next_slots(clinician, start_date, days=14, limit=5):
+    result = []
+    for offset in range(days):
+        for slot in available_slots(clinician, start_date + timedelta(days=offset)):
+            result.append(slot)
+            if len(result) >= limit:
+                return result
+    return result
 
 @appointments_bp.route('/book', methods=['GET', 'POST'])
 def book():
@@ -56,10 +80,13 @@ def book():
         flash(t('Appointment booked! Please complete payment.'), 'success')
         return redirect(url_for('payment.checkout', appointment_id=appointment.id))
     
-    clinicians = (ClinicianProfile.query.join(User, ClinicianProfile.user_id == User.id)
-                   .filter(ClinicianProfile.is_available.is_(True), User.is_active.is_(True), User.role == 'clinician')
-                   .all())
-    return render_template('patient/book_appointment.html', clinicians=clinicians)
+    clinicians = _active_clinicians(request.args.get('specialty', '').strip())
+    specialties = [row[0] for row in db.session.query(ClinicianProfile.specialty)
+                    .join(User).filter(ClinicianProfile.is_available.is_(True),
+                                       User.is_active.is_(True)).distinct().order_by(ClinicianProfile.specialty)]
+    return render_template('patient/book_appointment.html', clinicians=clinicians,
+                           specialties=specialties,
+                           selected_specialty=request.args.get('specialty', '').strip())
 
 
 @appointments_bp.get('/slots')
@@ -84,3 +111,101 @@ def slots():
         'slots': [{'value': item.strftime('%Y-%m-%dT%H:%M'),
                    'label': item.strftime('%I:%M %p')} for item in items],
     })
+
+
+@appointments_bp.get('/discovery')
+def discovery():
+    """Public, non-clinical availability used by the guided assistant."""
+    specialty = request.args.get('specialty', '').strip()
+    date_value = request.args.get('date', '').strip()
+    try:
+        start_date = datetime.strptime(date_value, '%Y-%m-%d').date() if date_value else datetime.now().date()
+    except ValueError:
+        return jsonify({'error': 'Choose a valid date'}), 400
+    if start_date < datetime.now().date() or start_date > datetime.now().date() + timedelta(days=60):
+        return jsonify({'error': 'Date must be within the next 60 days'}), 400
+
+    clinicians = _active_clinicians(specialty)
+    specialties = sorted({item.specialty for item in _active_clinicians()})
+    doctors = []
+    for clinician in clinicians:
+        slots = _next_slots(clinician, start_date)
+        if slots:
+            doctors.append({
+                'id': clinician.id,
+                'name': clinician.user.full_name,
+                'specialty': clinician.specialty,
+                'rating': round(float(clinician.average_rating or 0), 1),
+                'review_count': int(clinician.total_reviews or 0),
+                'fee': float(clinician.consultation_fee or 0),
+                'slots': [{'value': slot.strftime('%Y-%m-%dT%H:%M'),
+                           'label': slot.strftime('%a, %d %b · %I:%M %p')} for slot in slots],
+            })
+    return jsonify({'specialties': specialties, 'doctors': doctors,
+                    'clinic_phone': current_app.config['CLINIC_PHONE']})
+
+
+@appointments_bp.post('/request')
+@limiter.limit('5 per hour')
+def guest_request():
+    if session.get('user_id'):
+        return jsonify({'error': 'Please use your patient portal to book.'}), 400
+    data = request.get_json(silent=True) or {}
+    required = ('full_name', 'phone', 'date_of_birth', 'specialty', 'clinician_id', 'preferred_at')
+    if any(not str(data.get(key, '')).strip() for key in required):
+        return jsonify({'error': 'Complete all required booking details.'}), 400
+    try:
+        dob = datetime.strptime(data['date_of_birth'], '%Y-%m-%d').date()
+        preferred_at = datetime.strptime(data['preferred_at'], '%Y-%m-%dT%H:%M')
+        clinician = db.session.get(ClinicianProfile, int(data['clinician_id']))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Check the date, doctor, and time.'}), 400
+    if dob >= datetime.now().date() or not clinician or clinician.specialty != data['specialty']:
+        return jsonify({'error': 'Check the personal details and specialty.'}), 400
+    if not is_available_slot(clinician, preferred_at):
+        return jsonify({'error': 'That slot is no longer available. Choose another option.'}), 409
+    item = GuestAppointmentRequest(
+        reference=f'CCR-{token_hex(4).upper()}', date_of_birth=dob,
+        specialty=clinician.specialty, clinician_id=clinician.id,
+        preferred_at=preferred_at, status='new'
+    )
+    item.full_name = str(data['full_name']).strip()[:150]
+    item.phone = str(data['phone']).strip()[:40]
+    item.email = str(data.get('email', '')).strip()[:254] or None
+    item.reason = str(data.get('reason', '')).strip()[:1000] or None
+    db.session.add(item)
+    db.session.commit()
+    return jsonify({
+        'success': True, 'reference': item.reference,
+        'clinic_phone': current_app.config['CLINIC_PHONE'],
+        'message': ('Your request is visible to clinic staff. Call the clinic and quote '
+                    f'{item.reference} so staff can verify your details and create your portal.'),
+    }), 201
+
+
+@appointments_bp.post('/<int:appointment_id>/review')
+def review(appointment_id):
+    patient = PatientProfile.query.filter_by(user_id=session.get('user_id')).first()
+    appointment = db.session.get(Appointment, appointment_id)
+    if not patient or not appointment or appointment.patient_id != patient.id:
+        return redirect(url_for('auth.login'))
+    if appointment.status != 'completed' or appointment.review:
+        flash('Only completed, unreviewed appointments can be rated.', 'warning')
+        return redirect(url_for('patient.appointments'))
+    rating = request.form.get('rating', type=int)
+    if rating not in range(1, 6):
+        flash('Choose a rating from 1 to 5.', 'warning')
+        return redirect(url_for('patient.appointments'))
+    db.session.add(DoctorReview(
+        appointment_id=appointment.id, patient_id=patient.id,
+        clinician_id=appointment.clinician_id, rating=rating,
+        comment=request.form.get('comment', '').strip()[:1000] or None,
+    ))
+    db.session.flush()
+    aggregate = db.session.query(func.avg(DoctorReview.rating), func.count(DoctorReview.id)).filter_by(
+        clinician_id=appointment.clinician_id).one()
+    appointment.clinician.average_rating = float(aggregate[0] or 0)
+    appointment.clinician.total_reviews = int(aggregate[1] or 0)
+    db.session.commit()
+    flash('Thank you for reviewing your clinician.', 'success')
+    return redirect(url_for('patient.appointments'))

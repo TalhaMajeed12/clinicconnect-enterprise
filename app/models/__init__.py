@@ -10,6 +10,7 @@ from .system import SystemSetting, Attendance
 from .time_off import ClinicianTimeOff
 from .password_reset import PasswordResetToken
 from .consultation import ConsultationMessage
+from .booking import DoctorReview, GuestAppointmentRequest
 
 __all__ = [
     "User",
@@ -28,4 +29,6 @@ __all__ = [
     "ClinicianTimeOff",
     "PasswordResetToken",
     "ConsultationMessage",
+    "DoctorReview",
+    "GuestAppointmentRequest",
 ]
