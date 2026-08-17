@@ -28,33 +28,33 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm" aria-label="Primary navigation">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
                 <i class="fas fa-heartbeat me-2"></i>ClinicConnect
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     {% if session.get('user_id') %}
                         {% if session.get('role') == 'admin' %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.patients') }}"><i class="fas fa-users"></i> Patients</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.clinicians') }}"><i class="fas fa-user-md"></i> Clinicians</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.appointments') }}"><i class="fas fa-calendar-check"></i> Appointments</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.audit_logs') }}"><i class="fas fa-history"></i> Audit Logs</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.dashboard' }}" href="{{ url_for('admin.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['admin.patients', 'admin.patient_detail'] }}" href="{{ url_for('admin.patients') }}"><i class="fas fa-users"></i> Patients</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['admin.clinicians', 'admin.clinician_detail', 'admin.add_clinician', 'admin.edit_clinician'] }}" href="{{ url_for('admin.clinicians') }}"><i class="fas fa-user-md"></i> Clinicians</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.appointments' }}" href="{{ url_for('admin.appointments') }}"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.audit_logs' }}" href="{{ url_for('admin.audit_logs') }}"><i class="fas fa-history"></i> Audit Logs</a></li>
                         {% elif session.get('role') == 'clinician' %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.patients_list') }}"><i class="fas fa-users"></i> Patients</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.appointments') }}"><i class="fas fa-calendar-check"></i> Appointments</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.availability') }}"><i class="fas fa-clock"></i> Availability</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('clinician.time_off') }}"><i class="fas fa-calendar-times"></i> Time Off</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.dashboard' }}" href="{{ url_for('clinician.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['clinician.patients_list', 'clinician.patient_folder', 'clinician.add_patient', 'clinician.add_visit'] }}" href="{{ url_for('clinician.patients_list') }}"><i class="fas fa-users"></i> Patients</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.appointments' }}" href="{{ url_for('clinician.appointments') }}"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.availability' }}" href="{{ url_for('clinician.availability') }}"><i class="fas fa-clock"></i> Availability</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'clinician.time_off' }}" href="{{ url_for('clinician.time_off') }}"><i class="fas fa-calendar-times"></i> Time Off</a></li>
                         {% else %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient.history') }}"><i class="fas fa-history"></i> History</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.dashboard' }}" href="{{ url_for('patient.dashboard') }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.history' }}" href="{{ url_for('patient.history') }}"><i class="fas fa-history"></i> History</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'appointments.book' }}" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
                       
                         {% endif %}
                     {% endif %}
@@ -76,7 +76,6 @@
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     {% else %}
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i> Login</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}"><i class="fas fa-user-plus"></i> Register</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -84,7 +83,7 @@
     </nav>
     
     <!-- Flash Messages -->
-    <div class="container mt-3">
+    <div class="container mt-3" aria-live="polite">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}

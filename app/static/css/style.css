@@ -1,1 +1,158 @@
- 
+/* ClinicConnect's lightweight Bootstrap theme. */
+:root {
+    --cc-primary: #0d6efd;
+    --cc-surface: #ffffff;
+    --cc-background: #f5f7fb;
+    --cc-border: #dee2e6;
+    --cc-text-muted: #64748b;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    background: var(--cc-background);
+    color: #1f2937;
+    display: flex;
+    flex-direction: column;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+.navbar {
+    min-height: 4.5rem;
+}
+
+.navbar-brand {
+    letter-spacing: -0.025em;
+}
+
+.navbar .nav-link {
+    border-radius: 0.45rem;
+    margin: 0.15rem;
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus,
+.navbar .nav-link.active {
+    background: rgb(255 255 255 / 14%);
+    color: #fff;
+}
+
+.navbar .nav-link.active {
+    font-weight: 600;
+}
+
+main.container {
+    flex: 1 0 auto;
+    width: 100%;
+}
+
+.footer {
+    flex-shrink: 0;
+}
+
+h1,
+h2,
+h3 {
+    letter-spacing: -0.025em;
+}
+
+.card {
+    border-color: var(--cc-border);
+    border-radius: 0.8rem;
+    box-shadow: 0 0.25rem 1rem rgb(15 23 42 / 6%);
+}
+
+.card-header {
+    background: var(--cc-surface);
+    border-bottom-color: var(--cc-border);
+    padding: 1rem 1.25rem;
+}
+
+.card-header h5,
+.card-header h4 {
+    margin-bottom: 0;
+}
+
+.btn {
+    border-radius: 0.55rem;
+    font-weight: 500;
+}
+
+.form-control,
+.form-select {
+    border-radius: 0.55rem;
+    min-height: 2.75rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgb(13 110 253 / 15%);
+}
+
+.table {
+    vertical-align: middle;
+}
+
+.table thead th {
+    background: #f8fafc;
+    border-bottom-width: 1px;
+    color: #475569;
+    font-size: 0.8rem;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.table-responsive.card .table {
+    margin-bottom: 0;
+}
+
+.alert {
+    border-radius: 0.7rem;
+}
+
+.badge {
+    padding: 0.45em 0.7em;
+}
+
+.text-muted {
+    color: var(--cc-text-muted) !important;
+}
+
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        padding: 0.75rem 0;
+    }
+
+    .navbar .nav-link {
+        padding: 0.65rem 0.75rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    main.container,
+    body > .container {
+        padding-left: 0.85rem;
+        padding-right: 0.85rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .btn {
+        margin-bottom: 0.25rem;
+    }
+
+    .footer .mx-3 {
+        display: block;
+        height: 0.25rem;
+        font-size: 0;
+    }
+}
