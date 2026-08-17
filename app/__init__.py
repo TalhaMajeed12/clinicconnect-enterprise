@@ -59,7 +59,7 @@ def create_app(config_name='default'):
 
     csrf.init_app(app)
 
-    # Redis session - with better error handling
+    # Configure server-side sessions. Redis is optional on free deployments.
     if app.config.get('REDIS_URL'):
         try:
             app.config['SESSION_REDIS'] = redis.from_url(
@@ -71,10 +71,12 @@ def create_app(config_name='default'):
             )
             # Test connection
             app.config['SESSION_REDIS'].ping()
-            print("Redis connected successfully!")
+            app.config['SESSION_TYPE'] = 'redis'
+            app.logger.info('Redis connected successfully')
         except Exception as e:
-            print(f"Redis connection failed: {e}")
-            print("Falling back to filesystem sessions")
+            app.logger.warning(
+                'Redis connection failed; using filesystem sessions: %s', e
+            )
             app.config['SESSION_TYPE'] = 'filesystem'
             app.config['SESSION_REDIS'] = None
     else:
@@ -197,7 +199,7 @@ def setup_logging(app):
         app.logger.setLevel(logging.INFO)
         app.logger.info(f'{app.config["APP_NAME"]} v{app.config["APP_VERSION"]} started')
     except Exception as e:
-        print(f"Logging setup warning: {e}")
+        logging.getLogger(__name__).warning('File logging setup failed: %s', e)
 
 def register_error_handlers(app):
     @app.errorhandler(404)

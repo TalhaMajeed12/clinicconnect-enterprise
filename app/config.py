@@ -23,33 +23,11 @@ class Config:
         'pool_timeout': int(os.environ.get('POOL_TIMEOUT', 30)),
     }
     
-    # Redis - FIXED with error handling
+    # Redis is connected once by the application factory.
     REDIS_URL = os.environ.get('REDIS_URL')
     REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD')
-    SESSION_TYPE = 'filesystem'  # Default to filesystem
+    SESSION_TYPE = 'filesystem'
     SESSION_REDIS = None
-    
-    # Try to use Redis if URL is available
-    if REDIS_URL:
-        try:
-            import redis
-            SESSION_REDIS = redis.from_url(
-                REDIS_URL,
-                password=REDIS_PASSWORD,
-                socket_timeout=5,
-                socket_connect_timeout=5,
-                retry_on_timeout=True,
-                health_check_interval=30
-            )
-            # Test connection
-            SESSION_REDIS.ping()
-            SESSION_TYPE = 'redis'
-            print("✅ Redis connected successfully!")
-        except Exception as e:
-            print(f"⚠️ Redis connection failed: {e}")
-            print("⚠️ Falling back to filesystem sessions")
-            SESSION_TYPE = 'filesystem'
-            SESSION_REDIS = None
     
     # Security
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False') == 'True'
@@ -67,7 +45,7 @@ class Config:
     # Rate Limiting - Use memory if Redis not available
     RATELIMIT_ENABLED = os.environ.get('RATELIMIT_ENABLED', 'False') == 'True'
     RATELIMIT_DEFAULT = os.environ.get('RATELIMIT_DEFAULT', '100 per hour')
-    if SESSION_TYPE == 'redis' and REDIS_URL:
+    if REDIS_URL:
         RATELIMIT_STORAGE_URL = REDIS_URL
     else:
         RATELIMIT_STORAGE_URL = 'memory://'
@@ -120,7 +98,8 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_ECHO = True
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
-    SESSION_TYPE = 'filesystem'  # Force filesystem for development
+    SESSION_TYPE = 'filesystem'
+    REDIS_URL = None
 
 class ProductionConfig(Config):
     DEBUG = False
@@ -138,6 +117,7 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
     SESSION_TYPE = 'filesystem'
+    REDIS_URL = None
 
 config = {
     'development': DevelopmentConfig,

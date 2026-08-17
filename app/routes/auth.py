@@ -5,7 +5,6 @@ from app.models import (User, PatientProfile, ClinicianProfile, AuditLog,
 from datetime import datetime, timedelta
 from flask_login import login_user, logout_user
 from app.extensions import limiter
-import traceback
 import hashlib
 import secrets
 
@@ -79,9 +78,9 @@ def login():
             flash(f'Welcome back, {user.full_name}!', 'success')
             return redirect_based_on_role(user.role)
             
-        except Exception as e:
-            print(f"Login Error: {str(e)}")
-            print(traceback.format_exc())
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception('Patient login failed unexpectedly')
             flash('Login failed. Please try again.', 'danger')
             return render_template('auth/login.html')
     
@@ -140,9 +139,9 @@ def clinician_login():
             flash(f'Welcome back, Dr. {user.full_name}!', 'success')
             return redirect_based_on_role(user.role)
             
-        except Exception as e:
-            print(f"Clinician Login Error: {str(e)}")
-            print(traceback.format_exc())
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception('Clinician login failed unexpectedly')
             flash('Login failed. Please try again.', 'danger')
             return render_template('auth/clinician_login.html')
     
@@ -200,9 +199,9 @@ def admin_login():
             flash('Admin login successful!', 'success')
             return redirect_based_on_role(user.role)
             
-        except Exception as e:
-            print(f"Admin Login Error: {str(e)}")
-            print(traceback.format_exc())
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception('Admin login failed unexpectedly')
             flash('Login failed. Please try again.', 'danger')
             return render_template('auth/admin_login.html')
     
@@ -272,10 +271,10 @@ def register():
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('auth.login'))
             
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            print(f"Registration Error: {str(e)}")
-            flash(f'Error: {str(e)}', 'danger')
+            current_app.logger.exception('Patient registration failed unexpectedly')
+            flash('Registration failed. Please try again.', 'danger')
             return render_template('auth/register.html', form=request.form)
     
     return render_template('auth/register.html')
