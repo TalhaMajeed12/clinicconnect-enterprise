@@ -1,30 +1,17 @@
 {% extends "base.html" %}
+{% from "components/ui.html" import status_badge, empty_state %}
+{% block title %}Patient dashboard{% endblock %}
 {% block content %}
-<div class="page-heading d-flex flex-wrap justify-content-between align-items-end gap-3">
-  <div><div class="eyebrow">My health workspace</div><h2 class="mb-1">Welcome, {{ patient.user.full_name if patient.user else '' }}</h2><p class="text-muted mb-0">Manage appointments and revisit your care history.</p></div>
-  <a href="{{ url_for('appointments.book') }}" class="btn btn-primary"><i class="fas fa-calendar-plus me-2"></i>Book Appointment</a>
+<header class="page-heading d-flex flex-wrap justify-content-between align-items-end gap-3"><div><div class="eyebrow">My health workspace</div><h1 class="h2 mb-1">Welcome, {{ patient.user.full_name if patient.user else 'Patient' }}</h1><p class="text-muted mb-0">Your appointments, visits, and prescriptions in one place.</p></div><a href="{{ url_for('appointments.book') }}" class="btn btn-primary"><i class="fas fa-calendar-plus me-2"></i>Request appointment</a></header>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-calendar-day"></i></span><span class="stat-label">Next appointment</span><span class="stat-value stat-value-date">{{ next_appointment.appointment_date.strftime('%d %b') if next_appointment else 'None' }}</span></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-calendar-check"></i></span><span class="stat-label">Total appointments</span><span class="stat-value">{{ total_appointments }}</span></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-notes-medical"></i></span><span class="stat-label">Recent visits</span><span class="stat-value">{{ recent_visits|length }}</span></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-pills"></i></span><span class="stat-label">Active prescriptions</span><span class="stat-value">{{ active_prescriptions|length }}</span></div></div></div>
 </div>
 <div class="row g-4">
-  <div class="col-lg-7">
-    <section class="card h-100">
-      <div class="card-header d-flex justify-content-between align-items-center"><h5><i class="fas fa-calendar-check me-2 text-primary"></i>Upcoming Appointments</h5><span class="badge rounded-pill bg-primary">{{ upcoming|length }}</span></div>
-      <div class="card-body">
-        {% if upcoming %}
-          <div class="vstack gap-3">{% for apt in upcoming %}<div class="p-3 border rounded-3 d-flex flex-wrap justify-content-between gap-3"><div><div class="fw-semibold">Dr. {{ apt.clinician.user.full_name if apt.clinician else '' }}</div><small class="text-muted">{{ apt.clinician.specialty if apt.clinician else '' }}</small></div><div class="text-lg-end"><div class="fw-semibold">{{ apt.appointment_date.strftime('%d %b %Y') }}</div><small class="text-muted">{{ apt.appointment_date.strftime('%I:%M %p') }}</small></div></div>{% endfor %}</div>
-        {% else %}
-          <div class="text-center py-5"><span class="role-icon mb-3"><i class="fas fa-calendar"></i></span><h3 class="h5">No upcoming appointments</h3><p class="text-muted">Choose a clinician and select an available time slot when you are ready.</p><a href="{{ url_for('appointments.book') }}" class="btn btn-outline-primary">Find a slot</a></div>
-        {% endif %}
-      </div>
-    </section>
-  </div>
-  <div class="col-lg-5">
-    <section class="card h-100">
-      <div class="card-header d-flex justify-content-between align-items-center"><h5><i class="fas fa-clock-rotate-left me-2 text-primary"></i>Recent Visits</h5><a href="{{ url_for('patient.history') }}" class="small text-decoration-none">View all</a></div>
-      <div class="card-body">
-        {% if recent_visits %}<div class="vstack gap-3">{% for visit in recent_visits %}<div class="border-bottom pb-3"><div class="fw-semibold">{{ visit.visit_date.strftime('%d %b %Y') }}</div><small class="text-muted">Dr. {{ visit.clinician.user.full_name if visit.clinician else '' }}</small></div>{% endfor %}</div>
-        {% else %}<div class="text-center py-5"><span class="role-icon mb-3"><i class="fas fa-notes-medical"></i></span><h3 class="h5">No recent visits</h3><p class="text-muted mb-0">Completed care records will appear here.</p></div>{% endif %}
-      </div>
-    </section>
-  </div>
+  <div class="col-lg-7"><section class="card h-100"><div class="card-header d-flex justify-content-between align-items-center"><h2 class="h5 mb-0">Next appointment</h2><a href="{{ url_for('patient.appointments') }}" class="small">View all</a></div><div class="card-body">{% if next_appointment %}<div class="next-appointment"><div class="calendar-tile"><strong>{{ next_appointment.appointment_date.strftime('%d') }}</strong><span>{{ next_appointment.appointment_date.strftime('%b') }}</span></div><div class="flex-grow-1"><h3 class="h5 mb-1">Dr. {{ next_appointment.clinician.user.full_name if next_appointment.clinician and next_appointment.clinician.user else 'Clinician' }}</h3><p class="text-muted mb-2">{{ next_appointment.clinician.specialty if next_appointment.clinician else 'General care' }} · {{ next_appointment.appointment_date.strftime('%I:%M %p') }}</p>{{ status_badge(next_appointment.status) }}</div><a class="btn btn-outline-primary" href="{{ url_for('consultations.room', appointment_id=next_appointment.id) }}">Open consultation</a></div>{% else %}{{ empty_state('calendar-plus', 'No upcoming appointments', 'Choose a specialty, clinician, and available time when you are ready.', url_for('appointments.book'), 'Request appointment') }}{% endif %}</div></section></div>
+  <div class="col-lg-5"><section class="card h-100"><div class="card-header d-flex justify-content-between"><h2 class="h5 mb-0">Recent medical activity</h2><a href="{{ url_for('patient.history') }}" class="small">Medical history</a></div><div class="card-body">{% if recent_visits %}<div class="activity-list">{% for visit in recent_visits[:4] %}<div><span class="activity-icon"><i class="fas fa-stethoscope"></i></span><div><strong>Consultation with Dr. {{ visit.clinician.user.full_name if visit.clinician and visit.clinician.user else 'Clinician' }}</strong><small>{{ visit.visit_date.strftime('%d %b %Y') }}{% if visit.primary_diagnosis %} · {{ visit.primary_diagnosis }}{% endif %}</small></div></div>{% endfor %}</div>{% else %}{{ empty_state('file-medical', 'No medical activity yet', 'Completed visits and prescriptions will appear here.') }}{% endif %}</div></section></div>
 </div>
+<section class="card mt-4"><div class="card-header"><h2 class="h5 mb-0">Quick actions</h2></div><div class="card-body quick-actions"><a class="btn btn-primary" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i>Request appointment</a><a class="btn btn-outline-primary" href="{{ url_for('patient.appointments') }}"><i class="fas fa-calendar-check"></i>View appointments</a><a class="btn btn-outline-primary" href="{{ url_for('patient.history') }}"><i class="fas fa-notes-medical"></i>Medical history</a></div></section>
 {% endblock %}

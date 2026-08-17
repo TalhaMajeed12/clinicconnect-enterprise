@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import (Blueprint, current_app, render_template, request, redirect,
+                   url_for, flash, session, jsonify)
 from app import db
 from app.models import (User, PatientProfile, ClinicianProfile, Appointment, Payment,
-                        AuditLog, GuestAppointmentRequest)
+                        AuditLog, GuestAppointmentRequest, ClinicianTimeOff)
 from datetime import datetime, timedelta
 from uuid import uuid4
 from sqlalchemy import func
@@ -122,6 +123,17 @@ def dashboard():
         )
 
         total_appointments = Appointment.query.count()
+        today = datetime.now().date()
+        todays_appointments = Appointment.query.filter(
+            func.date(Appointment.appointment_date) == today
+        ).count()
+        pending_requests = GuestAppointmentRequest.query.filter_by(status='new').count()
+        cancelled_appointments = Appointment.query.filter_by(status='cancelled').count()
+        clinicians_on_time_off = (db.session.query(ClinicianTimeOff.clinician_id)
+                                  .filter(ClinicianTimeOff.status == 'approved',
+                                          ClinicianTimeOff.start_date <= today,
+                                          ClinicianTimeOff.end_date >= today)
+                                  .distinct().count())
 
         total_revenue = db.session.query(
             func.sum(Payment.amount)
@@ -132,7 +144,11 @@ def dashboard():
             total_patients=total_patients,
             total_clinicians=total_clinicians,
             total_appointments=total_appointments,
-            total_revenue=total_revenue
+            total_revenue=total_revenue,
+            todays_appointments=todays_appointments,
+            pending_requests=pending_requests,
+            cancelled_appointments=cancelled_appointments,
+            clinicians_on_time_off=clinicians_on_time_off,
         )
 
     except Exception as e:
@@ -187,10 +203,9 @@ def clinicians():
             clinicians=filtered
         )
 
-    except Exception as e:
-        print(f"Clinicians Error: {str(e)}")
-        print(traceback.format_exc())
-        flash(f'Error loading clinicians: {str(e)}', 'danger')
+    except Exception:
+        current_app.logger.exception('Unable to load clinicians')
+        flash('Unable to load clinicians. Please try again.', 'danger')
         return render_template(
             'admin/clinicians.html',
             clinicians=[]
@@ -200,8 +215,19 @@ def clinicians():
 def appointments():
     if not is_admin():
         return redirect(url_for('auth.admin_login'))
-    records = Appointment.query.order_by(Appointment.appointment_date.desc()).all()
-    return render_template('admin/appointments.html', appointments=records)
+    status = request.args.get('status', 'all').strip()
+    date_value = request.args.get('date', '').strip()
+    query = Appointment.query
+    if status != 'all':
+        query = query.filter_by(status=status)
+    if date_value:
+        try:
+            query = query.filter(func.date(Appointment.appointment_date) == datetime.strptime(date_value, '%Y-%m-%d').date())
+        except ValueError:
+            flash('Choose a valid appointment date.', 'warning')
+    records = query.order_by(Appointment.appointment_date.desc()).all()
+    return render_template('admin/appointments.html', appointments=records,
+                           status_filter=status, date_filter=date_value)
 # ============================================
 # VIEW CLINICIAN
 # ============================================

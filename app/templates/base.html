@@ -40,7 +40,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav me-auto {{ 'd-lg-none' if session.get('user_id') }}">
                     {% if session.get('user_id') %}
                         {% if session.get('role') == 'admin' %}
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'admin.dashboard' }}" href="{{ url_for('admin.dashboard') }}"><i class="fas fa-chart-pie"></i> {{ t('dashboard') }}</a></li>
@@ -102,10 +102,12 @@
         {% endwith %}
     </div>
     
-    <!-- Main Content -->
-    <main id="main-content" class="container mt-4" tabindex="-1">
-        {% block content %}{% endblock %}
+    <!-- Role-aware application shell -->
+    {% if session.get('user_id') %}<div class="portal-shell">{% include 'components/sidebar.html' %}{% endif %}
+    <main id="main-content" class="container mt-4 {{ 'portal-content' if session.get('user_id') }}" tabindex="-1">
+      {% block content %}{% endblock %}
     </main>
+    {% if session.get('user_id') %}</div>{% endif %}
 
     <button id="clinical-chat-toggle" class="btn btn-primary clinical-chat-toggle" type="button" aria-controls="clinical-chat-panel" aria-expanded="false">
         <i class="fas fa-comment-medical" aria-hidden="true"></i>

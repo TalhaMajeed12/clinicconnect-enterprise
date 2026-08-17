@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/ui.html" import status_badge, empty_state %}
 
 {% block content %}
 <div class="container-fluid">
@@ -34,6 +35,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-7"><section class="card h-100"><div class="card-header"><h2 class="h5 mb-0">Next patient today</h2></div><div class="card-body">{% if next_appointment %}<div class="next-appointment"><div class="calendar-tile"><strong>{{ next_appointment.appointment_date.strftime('%H:%M') }}</strong><span>Today</span></div><div class="flex-grow-1"><h3 class="h5 mb-1">{{ next_appointment.patient.user.full_name if next_appointment.patient and next_appointment.patient.user else 'Patient' }}</h3><p class="text-muted mb-2">{{ next_appointment.reason or 'Reason not provided' }}</p>{{ status_badge(next_appointment.status) }}</div><a class="btn btn-outline-primary" href="{{ url_for('clinician.patient_folder', patient_id=next_appointment.patient_id) }}">View patient</a></div>{% else %}{{ empty_state('calendar-check', 'No appointments today', 'Your next scheduled patient will appear here.') }}{% endif %}</div></section></div>
+        <div class="col-lg-5"><section class="card h-100"><div class="card-header"><h2 class="h5 mb-0">Schedule status</h2></div><div class="card-body"><dl class="row mb-0"><dt class="col-5">Booking</dt><dd class="col-7">{{ 'Accepting online bookings' if clinician.is_available else 'Online booking paused' }}</dd><dt class="col-5">Working hours</dt><dd class="col-7">{{ (clinician.working_hours or {}).get('start', '—') }}–{{ (clinician.working_hours or {}).get('end', '—') }}</dd><dt class="col-5">Upcoming time off</dt><dd class="col-7">{{ upcoming_time_off.start_date.strftime('%d %b %Y') if upcoming_time_off else 'None scheduled' }}</dd></dl><div class="d-flex gap-2 mt-3"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('clinician.availability') }}">Edit availability</a><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('clinician.time_off') }}">Manage time off</a></div></div></section></div>
     </div>
     
     <!-- Quick Actions -->
@@ -94,11 +100,7 @@
                                         <td>{{ appointment.patient.user.full_name if appointment.patient and appointment.patient.user else 'N/A' }}</td>
                                         <td>{{ appointment.appointment_date.strftime('%H:%M') if appointment.appointment_date else 'N/A' }}</td>
                                         <td>{{ appointment.reason or 'N/A' }}</td>
-                                        <td>
-                                            <span class="badge bg-{% if appointment.status == 'pending' %}warning{% elif appointment.status == 'confirmed' %}info{% elif appointment.status == 'completed' %}success{% else %}danger{% endif %}">
-                                                {{ appointment.status }}
-                                            </span>
-                                        </td>
+                                        <td>{{ status_badge(appointment.status) }}</td>
                                         <td>
                                             <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-info">
                                                 <i class="fas fa-eye"></i>
@@ -110,7 +112,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <p class="text-muted">No appointments today.</p>
+                        {{ empty_state('calendar-day', 'No appointments today', 'Confirmed and requested appointments for today will appear here.') }}
                     {% endif %}
                 </div>
             </div>

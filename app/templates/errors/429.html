@@ -1,1 +1,1 @@
- 
+{% extends "base.html" %}{% block title %}Please slow down{% endblock %}{% block content %}<section class="error-state card"><div class="card-body"><span class="error-code">429</span><i class="fas fa-hourglass-half"></i><h1>Please wait a moment</h1><p>Too many requests were received in a short period. This limit protects ClinicConnect accounts and services.</p><div><button class="btn btn-primary" type="button" onclick="history.back()">Go back</button><a class="btn btn-outline-secondary" href="{{ url_for('main.index') }}">Return home</a></div></div></section>{% endblock %}

@@ -1,0 +1,29 @@
+<aside class="portal-sidebar d-none d-lg-flex" aria-label="{{ session.get('role', 'User')|title }} portal navigation">
+  <div class="portal-identity">
+    <span class="portal-avatar"><i class="fas fa-{{ 'user-shield' if session.get('role') == 'admin' else 'user-doctor' if session.get('role') == 'clinician' else 'user' }}"></i></span>
+    <div><strong>{{ portal_user.full_name if portal_user else 'ClinicConnect user' }}</strong><small>{{ session.get('role', 'user')|title }} portal</small></div>
+  </div>
+  <nav class="portal-menu">
+  {% if session.get('role') == 'admin' %}
+    <a class="{{ 'active' if request.endpoint == 'admin.dashboard' }}" href="{{ url_for('admin.dashboard') }}"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+    <a class="{{ 'active' if request.endpoint and request.endpoint.startswith('admin.patient') }}" href="{{ url_for('admin.patients') }}"><i class="fas fa-users"></i><span>Patients</span></a>
+    <a class="{{ 'active' if request.endpoint and ('clinician' in request.endpoint) }}" href="{{ url_for('admin.clinicians') }}"><i class="fas fa-user-doctor"></i><span>Clinicians</span></a>
+    <a class="{{ 'active' if request.endpoint == 'admin.appointments' }}" href="{{ url_for('admin.appointments') }}"><i class="fas fa-calendar-check"></i><span>Appointments</span></a>
+    <a class="{{ 'active' if request.endpoint and 'intake' in request.endpoint }}" href="{{ url_for('admin.intake_requests') }}"><i class="fas fa-clipboard-check"></i><span>Booking intake</span></a>
+    <a class="{{ 'active' if request.endpoint == 'admin.audit_logs' }}" href="{{ url_for('admin.audit_logs') }}"><i class="fas fa-clock-rotate-left"></i><span>Audit records</span></a>
+  {% elif session.get('role') == 'clinician' %}
+    <a class="{{ 'active' if request.endpoint == 'clinician.dashboard' }}" href="{{ url_for('clinician.dashboard') }}"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+    <a class="{{ 'active' if request.endpoint and request.endpoint.startswith('clinician.patient') }}" href="{{ url_for('clinician.patients_list') }}"><i class="fas fa-users"></i><span>Patients</span></a>
+    <a class="{{ 'active' if request.endpoint == 'clinician.appointments' }}" href="{{ url_for('clinician.appointments') }}"><i class="fas fa-calendar-check"></i><span>Appointments</span></a>
+    <a class="{{ 'active' if request.endpoint == 'clinician.availability' }}" href="{{ url_for('clinician.availability') }}"><i class="fas fa-clock"></i><span>Availability</span></a>
+    <a class="{{ 'active' if request.endpoint == 'clinician.time_off' }}" href="{{ url_for('clinician.time_off') }}"><i class="fas fa-calendar-xmark"></i><span>Time off</span></a>
+  {% else %}
+    <a class="{{ 'active' if request.endpoint == 'patient.dashboard' }}" href="{{ url_for('patient.dashboard') }}"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+    <a class="{{ 'active' if request.endpoint == 'patient.appointments' }}" href="{{ url_for('patient.appointments') }}"><i class="fas fa-calendar-check"></i><span>Appointments</span></a>
+    <a class="{{ 'active' if request.endpoint == 'appointments.book' }}" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i><span>Request appointment</span></a>
+    <a class="{{ 'active' if request.endpoint == 'patient.history' }}" href="{{ url_for('patient.history') }}"><i class="fas fa-notes-medical"></i><span>Medical history</span></a>
+    <a class="{{ 'active' if request.endpoint == 'consultations.room' }}" href="{{ url_for('patient.appointments') }}"><i class="fas fa-video"></i><span>Consultations</span></a>
+  {% endif %}
+  </nav>
+  <a class="portal-logout" href="{{ url_for('auth.logout') }}"><i class="fas fa-arrow-right-from-bracket"></i><span>Log out</span></a>
+</aside>

@@ -1,19 +1,15 @@
 {% extends "base.html" %}
+{% block title %}Admin dashboard{% endblock %}
 {% block content %}
-<div class="container-fluid">
-  <div class="page-heading"><div class="eyebrow">Clinic overview</div><h2 class="mb-1">Admin Dashboard</h2><p class="text-muted mb-0">Monitor operations and move quickly to common management tasks.</p></div>
-  <div class="row g-4">
-    <div class="col-sm-6 col-xl-3"><div class="card dashboard-stat"><div class="card-body"><span class="stat-icon"><i class="fas fa-users"></i></span><span class="stat-label">Total Patients</span><span class="stat-value">{{ total_patients or 0 }}</span></div></div></div>
-    <div class="col-sm-6 col-xl-3"><div class="card dashboard-stat"><div class="card-body"><span class="stat-icon"><i class="fas fa-user-doctor"></i></span><span class="stat-label">Total Clinicians</span><span class="stat-value">{{ total_clinicians or 0 }}</span></div></div></div>
-    <div class="col-sm-6 col-xl-3"><div class="card dashboard-stat"><div class="card-body"><span class="stat-icon"><i class="fas fa-calendar-check"></i></span><span class="stat-label">Total Appointments</span><span class="stat-value">{{ total_appointments or 0 }}</span></div></div></div>
-    <div class="col-sm-6 col-xl-3"><div class="card dashboard-stat"><div class="card-body"><span class="stat-icon"><i class="fas fa-wallet"></i></span><span class="stat-label">Revenue</span><span class="stat-value">PKR {{ "{:,.0f}".format(total_revenue or 0) }}</span></div></div></div>
-  </div>
-  <section class="card mt-4"><div class="card-header"><h5><i class="fas fa-bolt me-2 text-primary"></i>Quick Actions</h5></div><div class="card-body quick-actions">
-    <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary"><i class="fas fa-user-plus"></i>Add Clinician</a>
-    <a href="{{ url_for('admin.patients') }}" class="btn btn-outline-primary"><i class="fas fa-users"></i>View Patients</a>
-    <a href="{{ url_for('admin.clinicians') }}" class="btn btn-outline-primary"><i class="fas fa-user-md"></i>Manage Clinicians</a>
-    <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline-secondary"><i class="fas fa-history"></i>Activity Records</a>
-    <a href="{{ url_for('admin.intake_requests') }}" class="btn btn-outline-primary"><i class="fas fa-clipboard-check"></i>Booking Intake</a>
-  </div></section>
+<header class="page-heading"><div class="eyebrow">Clinic operations</div><h1 class="h2 mb-1">Administration dashboard</h1><p class="text-muted mb-0">Monitor today’s workload and manage important clinic queues.</p></header>
+<div class="row g-3">
+  <div class="col-6 col-xl-2"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-users"></i></span><span class="stat-label">Patients</span><span class="stat-value">{{ total_patients }}</span></div></div></div>
+  <div class="col-6 col-xl-2"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-user-doctor"></i></span><span class="stat-label">Active clinicians</span><span class="stat-value">{{ total_clinicians }}</span></div></div></div>
+  <div class="col-6 col-xl-2"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-calendar-day"></i></span><span class="stat-label">Today</span><span class="stat-value">{{ todays_appointments }}</span></div></div></div>
+  <div class="col-6 col-xl-2"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-clipboard-list"></i></span><span class="stat-label">New requests</span><span class="stat-value">{{ pending_requests }}</span></div></div></div>
+  <div class="col-6 col-xl-2"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-ban"></i></span><span class="stat-label">Cancelled</span><span class="stat-value">{{ cancelled_appointments }}</span></div></div></div>
+  <div class="col-6 col-xl-2"><div class="card dashboard-stat h-100"><div class="card-body"><span class="stat-icon"><i class="fas fa-calendar-xmark"></i></span><span class="stat-label">On time off</span><span class="stat-value">{{ clinicians_on_time_off }}</span></div></div></div>
 </div>
+<div class="row g-4 mt-1"><div class="col-lg-8"><section class="card h-100"><div class="card-header"><h2 class="h5 mb-0">Priority queues</h2></div><div class="card-body"><div class="management-links"><a href="{{ url_for('admin.intake_requests') }}"><i class="fas fa-clipboard-check"></i><div><strong>Booking intake</strong><small>{{ pending_requests }} requests awaiting staff review</small></div><i class="fas fa-chevron-right"></i></a><a href="{{ url_for('admin.appointments') }}"><i class="fas fa-calendar-check"></i><div><strong>Appointment management</strong><small>{{ total_appointments }} appointments across the clinic</small></div><i class="fas fa-chevron-right"></i></a><a href="{{ url_for('admin.audit_logs') }}"><i class="fas fa-clock-rotate-left"></i><div><strong>Audit records</strong><small>Review traceable activity and archived records</small></div><i class="fas fa-chevron-right"></i></a></div></div></section></div><div class="col-lg-4"><section class="card h-100"><div class="card-header"><h2 class="h5 mb-0">Financial overview</h2></div><div class="card-body d-flex flex-column justify-content-center"><span class="text-muted">Recorded deposits</span><strong class="display-6">PKR {{ "{:,.0f}".format(total_revenue or 0) }}</strong><small class="text-muted">Completed demo or configured provider payments.</small></div></section></div></div>
+<section class="card mt-4"><div class="card-header"><h2 class="h5 mb-0">Quick actions</h2></div><div class="card-body quick-actions"><a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary"><i class="fas fa-user-plus"></i>Add clinician</a><a href="{{ url_for('admin.patients') }}" class="btn btn-outline-primary"><i class="fas fa-users"></i>Manage patients</a><a href="{{ url_for('admin.clinicians') }}" class="btn btn-outline-primary"><i class="fas fa-user-doctor"></i>Manage clinicians</a></div></section>
 {% endblock %}

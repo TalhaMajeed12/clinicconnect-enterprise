@@ -3,6 +3,22 @@
 
     const originalLabels = new WeakMap();
 
+    window.showFeedback = (message, type = 'info') => {
+        let region = document.getElementById('global-feedback');
+        if (!region) {
+            region = document.createElement('div');
+            region.id = 'global-feedback';
+            region.className = 'global-feedback';
+            region.setAttribute('aria-live', 'polite');
+            document.body.appendChild(region);
+        }
+        const item = document.createElement('div');
+        item.className = `alert alert-${type} shadow-sm mb-2`;
+        item.textContent = message;
+        region.appendChild(item);
+        window.setTimeout(() => item.remove(), 5000);
+    };
+
     const unlockForms = () => {
         document.querySelectorAll('form[data-submitting="true"]').forEach((form) => {
             form.dataset.submitting = 'false';
@@ -19,6 +35,10 @@
     document.querySelectorAll('form').forEach((form) => {
         if ((form.method || 'get').toLowerCase() !== 'post' || form.dataset.noSubmitLock !== undefined) return;
         form.addEventListener('submit', (event) => {
+            if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) {
+                event.preventDefault();
+                return;
+            }
             if (form.dataset.submitting === 'true') {
                 event.preventDefault();
                 return;

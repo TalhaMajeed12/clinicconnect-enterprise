@@ -106,7 +106,11 @@ def create_app(config_name='default'):
     @app.context_processor
     def inject_translations():
         from app.utils.translations import t
-        return dict(t=t)
+        from app.models import User
+        portal_user = None
+        if session.get('user_id'):
+            portal_user = db.session.get(User, session.get('user_id'))
+        return dict(t=t, portal_user=portal_user)
     
     # Setup logging
     setup_logging(app)

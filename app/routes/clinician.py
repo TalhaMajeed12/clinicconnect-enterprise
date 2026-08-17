@@ -55,9 +55,11 @@ def dashboard():
             clinician_id=clinician.id
         ).filter(
             db.func.date(Appointment.appointment_date) == today
-        ).all()
+        ).order_by(Appointment.appointment_date.asc()).all()
 
-        total_patients = PatientProfile.query.count()
+        total_patients = (db.session.query(Appointment.patient_id)
+                          .filter(Appointment.clinician_id == clinician.id)
+                          .distinct().count())
 
         total_appointments = Appointment.query.filter_by(
             clinician_id=clinician.id
@@ -68,13 +70,21 @@ def dashboard():
             status='pending'
         ).count()
 
+        upcoming_time_off = (ClinicianTimeOff.query
+                             .filter(ClinicianTimeOff.clinician_id == clinician.id,
+                                     ClinicianTimeOff.status == 'approved',
+                                     ClinicianTimeOff.end_date >= today)
+                             .order_by(ClinicianTimeOff.start_date.asc()).first())
+
         return render_template(
             'clinician/dashboard.html',
             clinician=clinician,
             appointments=appointments,
             total_patients=total_patients,
             total_appointments=total_appointments,
-            pending_appointments=pending_appointments
+            pending_appointments=pending_appointments,
+            next_appointment=appointments[0] if appointments else None,
+            upcoming_time_off=upcoming_time_off,
         )
 
     except Exception as e:
@@ -642,8 +652,11 @@ def update_appointment(appointment_id):
         allowed_statuses = [
             'pending',
             'confirmed',
+            'checked_in',
             'completed',
-            'cancelled'
+            'cancelled',
+            'rejected',
+            'no_show',
         ]
 
         if new_status not in allowed_statuses:
@@ -660,11 +673,11 @@ def update_appointment(appointment_id):
             'status': appointment.status
         })
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-
+        current_app.logger.exception('Unable to update appointment status')
         return jsonify({
-            'error': str(e)
+            'error': 'Unable to update appointment status'
         }), 500
 
 

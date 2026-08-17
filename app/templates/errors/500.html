@@ -1,10 +1,1 @@
-{% extends "base.html" %}
-
-{% block content %}
-<div class="text-center mt-5">
-    <h1 class="display-1">500</h1>
-    <h2>Server Error</h2>
-    <p>Something went wrong. Please try again later.</p>
-    <a href="{{ url_for('main.index') }}" class="btn btn-primary">Go Home</a>
-</div>
-{% endblock %} 
+{% extends "base.html" %}{% block title %}Something went wrong{% endblock %}{% block content %}<section class="error-state card"><div class="card-body"><span class="error-code">500</span><i class="fas fa-heart-pulse"></i><h1>Something went wrong</h1><p>ClinicConnect could not complete this request. Your existing records have not been intentionally changed. Please try again or return to your dashboard.</p><div><button class="btn btn-primary" type="button" onclick="location.reload()">Try again</button><a class="btn btn-outline-secondary" href="{{ url_for('main.index') }}">Return home</a></div></div></section>{% endblock %}

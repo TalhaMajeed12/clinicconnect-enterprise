@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash
 from app import db
-from app.models import User, PatientProfile, Visit, Appointment, Payment
+from app.models import User, PatientProfile, Visit, Appointment, Payment, Prescription
 from app.utils.translations import t
 from datetime import datetime
 
@@ -28,7 +28,7 @@ def dashboard():
         patient_id=patient.id
     ).filter(
         Appointment.appointment_date >= datetime.utcnow()
-    ).all()
+    ).order_by(Appointment.appointment_date.asc()).all()
 
     recent_visits = Visit.query.filter_by(
         patient_id=patient.id
@@ -36,11 +36,19 @@ def dashboard():
         Visit.visit_date.desc()
     ).limit(5).all()
 
+    total_appointments = Appointment.query.filter_by(patient_id=patient.id).count()
+    active_prescriptions = Prescription.query.filter_by(
+        patient_id=patient.id, is_active=True
+    ).order_by(Prescription.created_at.desc()).all()
+
     return render_template(
         'patient/dashboard.html',
         patient=patient,
         upcoming=upcoming,
-        recent_visits=recent_visits
+        recent_visits=recent_visits,
+        next_appointment=upcoming[0] if upcoming else None,
+        total_appointments=total_appointments,
+        active_prescriptions=active_prescriptions,
     )
 
 
@@ -58,9 +66,18 @@ def history():
         Visit.visit_date.desc()
     ).all()
 
+    prescriptions = Prescription.query.filter_by(patient_id=patient.id).order_by(
+        Prescription.created_at.desc()
+    ).all()
+    appointments = Appointment.query.filter_by(patient_id=patient.id).order_by(
+        Appointment.appointment_date.desc()
+    ).all()
+
     return render_template(
         'patient/history.html',
-        visits=visits
+        visits=visits,
+        prescriptions=prescriptions,
+        appointments=appointments,
     )
 
 

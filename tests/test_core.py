@@ -53,9 +53,50 @@ class CoreFlowTests(unittest.TestCase):
 
     def test_role_protected_dashboards(self):
         self._session_as(self.patient_user)
-        self.assertEqual(self.client.get('/patient/dashboard').status_code, 200)
+        response = self.client.get('/patient/dashboard')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Patient portal', response.data)
+        self.assertIn(b'Next appointment', response.data)
         self.assertEqual(self.client.get('/admin/dashboard').status_code, 302)
         self.assertEqual(self.client.get('/clinician/dashboard').status_code, 302)
+
+    def test_role_dashboards_use_the_shared_portal_shell(self):
+        expectations = (
+            (self.admin, '/admin/dashboard', b'Admin portal'),
+            (self.clinician_user, '/clinician/dashboard', b'Clinician portal'),
+            (self.patient_user, '/patient/dashboard', b'Patient portal'),
+        )
+        for user, path, label in expectations:
+            self._session_as(user)
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'portal-sidebar', response.data)
+            self.assertIn(label, response.data)
+
+    def test_patient_history_is_structured_and_role_scoped(self):
+        appointment = Appointment(
+            patient_id=self.patient.id,
+            clinician_id=self.clinician.id,
+            appointment_date=datetime.utcnow() - timedelta(days=1),
+            reason='Annual review',
+            status='completed',
+        )
+        db.session.add(appointment)
+        db.session.commit()
+
+        self._session_as(self.patient_user)
+        response = self.client.get('/patient/history')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Medical history', response.data)
+        self.assertIn(b'Appointments', response.data)
+        self.assertIn(b'Annual review', response.data)
+
+    def test_error_pages_are_actionable_and_do_not_expose_debug_details(self):
+        missing = self.client.get('/this-page-does-not-exist')
+        self.assertEqual(missing.status_code, 404)
+        self.assertIn(b'Page not found', missing.data)
+        self.assertIn(b'Return home', missing.data)
+        self.assertNotIn(b'Traceback', missing.data)
 
     def test_admin_can_add_clinician_with_required_contact_details(self):
         self._session_as(self.admin)

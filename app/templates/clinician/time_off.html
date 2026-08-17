@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Time Off{% endblock %}
 {% block content %}
-<h1 class="h3 mb-3">Clinician time off</h1>
+<header class="page-heading"><div class="eyebrow">Schedule exceptions</div><h1 class="h2 mb-1">Time off</h1><p class="text-muted mb-0">Approved entries immediately block overlapping appointment slots. Existing appointments are not deleted.</p></header>
 <form method="POST" class="card card-body shadow-sm mb-4">
     <div class="row">
-        <div class="col-md-3 mb-3"><label class="form-label">Start date</label><input class="form-control" type="date" name="start_date" required></div>
-        <div class="col-md-3 mb-3"><label class="form-label">End date</label><input class="form-control" type="date" name="end_date" required></div>
+        <div class="col-md-3 mb-3"><label class="form-label" for="time-off-start-date">Start date</label><input id="time-off-start-date" class="form-control" type="date" name="start_date" required></div>
+        <div class="col-md-3 mb-3"><label class="form-label" for="time-off-end-date">End date</label><input id="time-off-end-date" class="form-control" type="date" name="end_date" required></div>
         <div class="col-md-3 mb-3 partial-time"><label class="form-label">Start time</label><input class="form-control" type="time" name="start_time"></div>
         <div class="col-md-3 mb-3 partial-time"><label class="form-label">End time</label><input class="form-control" type="time" name="end_time"></div>
     </div>
@@ -14,8 +14,8 @@
     <button class="btn btn-primary" type="submit">Add time off</button>
 </form>
 <div class="table-responsive card shadow-sm"><table class="table mb-0"><thead><tr><th>Dates</th><th>Hours</th><th>Reason</th><th>Status</th><th></th></tr></thead><tbody>
-{% for entry in entries %}<tr><td>{{ entry.start_date }}{% if entry.end_date != entry.start_date %} – {{ entry.end_date }}{% endif %}</td><td>{{ 'Full day' if entry.full_day else entry.start_time.strftime('%H:%M') ~ ' – ' ~ entry.end_time.strftime('%H:%M') }}</td><td>{{ entry.reason or '—' }}</td><td>{{ entry.status|title }}</td><td>{% if entry.status == 'approved' %}<form method="POST" action="{{ url_for('clinician.cancel_time_off', entry_id=entry.id) }}"><button class="btn btn-sm btn-outline-danger" type="submit">Cancel</button></form>{% endif %}</td></tr>
+{% for entry in entries %}<tr><td>{{ entry.start_date }}{% if entry.end_date != entry.start_date %} – {{ entry.end_date }}{% endif %}</td><td>{{ 'Full day' if entry.full_day else entry.start_time.strftime('%H:%M') ~ ' – ' ~ entry.end_time.strftime('%H:%M') }}</td><td>{{ entry.reason or '—' }}</td><td>{{ entry.status|title }}</td><td>{% if entry.status == 'approved' %}<form method="POST" action="{{ url_for('clinician.cancel_time_off', entry_id=entry.id) }}" data-confirm="Cancel this time-off entry? Future appointment availability may change."><button class="btn btn-sm btn-outline-danger" type="submit">Cancel time off</button></form>{% endif %}</td></tr>
 {% else %}<tr><td class="text-center text-muted py-4" colspan="5">No time off recorded.</td></tr>{% endfor %}
 </tbody></table></div>
-<script>const fullDay = document.getElementById('full_day'); const syncTimes = () => document.querySelectorAll('.partial-time input').forEach(input => { input.disabled = fullDay.checked; input.required = !fullDay.checked; }); fullDay.addEventListener('change', syncTimes); syncTimes();</script>
 {% endblock %}
+{% block scripts %}<script>const fullDay = document.getElementById('full_day'); const startDate = document.getElementById('time-off-start-date'); const endDate = document.getElementById('time-off-end-date'); const today = new Date().toISOString().slice(0,10); startDate.min = today; endDate.min = today; startDate.addEventListener('change', () => { endDate.min = startDate.value || today; if (endDate.value && endDate.value < endDate.min) endDate.value = endDate.min; }); const syncTimes = () => document.querySelectorAll('.partial-time input').forEach(input => { input.disabled = fullDay.checked; input.required = !fullDay.checked; }); fullDay.addEventListener('change', syncTimes); syncTimes();</script>{% endblock %}

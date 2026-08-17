@@ -97,7 +97,7 @@ TRANSLATIONS = {
     'admin_home_text': {'en': 'Manage clinicians, patients, and system settings.', 'ur': 'ڈاکٹروں، مریضوں اور نظام کی ترتیبات کا انتظام کریں۔'},
 
     # Clinical support
-    'clinical_support': {'en': 'Clinical Support', 'ur': 'طبی رہنمائی'},
+    'clinical_support': {'en': 'ClinicConnect Assistant', 'ur': 'کلینک کنیکٹ معاون'},
     'general_guidance_only': {'en': 'General guidance only', 'ur': 'صرف عمومی رہنمائی'},
     'medication_safety': {'en': 'Medication safety', 'ur': 'دوا کی حفاظت'},
     'records': {'en': 'Records', 'ur': 'ریکارڈ'},

@@ -1,0 +1,8 @@
+{% macro status_badge(status) -%}
+  {% set value = (status or 'unknown')|lower %}
+  <span class="status-badge status-{{ value|replace('_', '-') }}"><span aria-hidden="true"></span>{{ value|replace('_', ' ')|title }}</span>
+{%- endmacro %}
+
+{% macro empty_state(icon, title, text, action_url=None, action_label=None) -%}
+  <div class="empty-state"><i class="fas fa-{{ icon }}" aria-hidden="true"></i><h3>{{ title }}</h3><p>{{ text }}</p>{% if action_url %}<a class="btn btn-outline-primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}</div>
+{%- endmacro %}
