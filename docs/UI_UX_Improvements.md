@@ -62,9 +62,30 @@ The work focused on four outcomes:
 
 Target layouts are designed for approximately 1440 px desktop, 768 px tablet, and 375 px mobile widths.
 
+## Horizontal Overflow Fixes
+
+Rendered browser diagnostics identified the authenticated layout as the primary source of laptop-width overflow. Bootstrap applied `width: 100%` to `main.container` while that same element was a flex sibling of the 238 px sidebar. The browser therefore calculated the page as **sidebar + a full viewport-width content panel**. On a 1366 px viewport this produced a document approximately 1497 px wide.
+
+The fix gives the portal content a zero flex basis, `min-width: 0`, and no Bootstrap maximum-width constraint while keeping the sidebar non-growing. The content now consumes only the remaining width. This corrects the sizing calculation instead of concealing it with `overflow-x: hidden`.
+
+Additional safeguards were applied to the real overflow sources:
+
+- all layout boxes use `border-box` sizing;
+- containers, rows, columns, cards, headings, and flex children may shrink;
+- images, SVGs, video, canvases, and iframes cannot exceed their parent width;
+- long identifiers, email addresses, notes, and chat messages may wrap;
+- data tables are constrained to responsive wrappers with local horizontal scrolling only when needed;
+- previously unwrapped patient and clinician detail tables now use responsive wrappers;
+- chat inputs and modal content shrink within the viewport;
+- mobile page-heading actions and quick actions stack without leaving the screen.
+
+Browser measurements were performed on public/authentication pages at 1920, 1440, 1366, 1280, 1024, 768, and 390 px widths. Patient, clinician, and admin portal pages were checked at 1366, 1280, 1024, 768, and 390 px. At every tested width, document `scrollWidth` equalled document `clientWidth`. Wide management tables scroll only inside `.table-responsive` on narrow screens.
+
 ## Privacy and security safeguards
 
 - Existing role decorators and route authorization remain the source of truth; UI visibility is not treated as authorization.
+- Clinician patient search, patient folders, and visit creation now require an existing clinician-patient appointment assignment; direct unassigned patient URLs return 403.
+- Appointment status changes enforce valid state transitions so completed, rejected, cancelled, and no-show records cannot be reopened through a direct API request.
 - Patient history only uses data already available to the authenticated patient's server-side route.
 - Clinician patient totals are derived from assigned appointments rather than all patients.
 - POST actions remain protected by the application's CSRF configuration.
@@ -98,11 +119,14 @@ Target layouts are designed for approximately 1440 px desktop, 768 px tablet, an
 - `app/routes/clinician.py`
 - `app/routes/patient.py`
 - `app/utils/translations.py`
+- `app/utils/audit.py`
 - `tests/test_core.py`
 
 ## Verification
 
 The automated test suite covers authentication boundaries, shared portal rendering, appointment booking/conflicts, payments, reviews, encrypted communications, guided intake, patient history, error pages, audit behavior, translations, and clinical-assistant safety behavior. Python compilation is also checked before release.
+
+The expanded security tests also cover direct unassigned-patient access and terminal appointment-state protection. Important appointment, visit, review, availability, time-off, and cancellation events are written to the existing audit system without recording clinical narrative, credentials, tokens, or secrets.
 
 ## Known limitations and next steps
 

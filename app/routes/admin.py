@@ -532,6 +532,7 @@ def audit_logs():
 
         scope = request.args.get('scope', 'active')
         action = request.args.get('action', '').strip()
+        role = request.args.get('role', '').strip()
         resource_type = request.args.get('resource_type', '').strip()
         date_from = request.args.get('date_from', '').strip()
         date_to = request.args.get('date_to', '').strip()
@@ -543,6 +544,10 @@ def audit_logs():
             query = query.filter(AuditLog.archived_at.is_(None))
         if action:
             query = query.filter(AuditLog.action.ilike(f'%{action}%'))
+        if role in {'admin', 'clinician', 'patient'}:
+            query = query.join(User, AuditLog.user_id == User.id).filter(User.role == role)
+        elif role:
+            role = ''
         if resource_type:
             query = query.filter(AuditLog.resource_type == resource_type)
         try:
@@ -564,15 +569,15 @@ def audit_logs():
         return render_template(
             'admin/audit_logs.html',
             logs=logs,
-            filters={'scope': scope, 'action': action, 'resource_type': resource_type,
+            filters={'scope': scope, 'action': action, 'role': role, 'resource_type': resource_type,
                      'date_from': date_from, 'date_to': date_to},
             resource_types=[row[0] for row in db.session.query(AuditLog.resource_type)
                             .filter(AuditLog.resource_type.isnot(None)).distinct().order_by(AuditLog.resource_type)],
         )
 
-    except Exception as e:
-        print(f"Audit Logs Error: {str(e)}")
-        flash('Error loading logs', 'danger')
+    except Exception:
+        current_app.logger.exception('Unable to load audit records')
+        flash('Unable to load activity records. Please try again.', 'danger')
         return render_template('errors/500.html'), 500
 
 

@@ -5,8 +5,16 @@ from app.models import (User, PatientProfile, ClinicianProfile, ClinicianTimeOff
 from datetime import datetime, date
 import traceback
 from app.utils.patient_search import search_patients_by_fields
+from app.utils.audit import record_audit
 
 clinician_bp = Blueprint('clinician', __name__)
+
+
+def clinician_can_access_patient(clinician_id, patient_id):
+    """Patients become available to a clinician through an appointment."""
+    return db.session.query(Appointment.id).filter_by(
+        clinician_id=clinician_id, patient_id=patient_id
+    ).first() is not None
 
 
 def get_clinician():
@@ -117,7 +125,10 @@ def patients_list():
         filters = {key: request.args.get(key, '').strip()
                    for key in ('patient_no', 'name', 'contact', 'date_of_birth')}
 
-        query = PatientProfile.query.join(User)
+        query = (PatientProfile.query.join(User)
+                 .join(Appointment, Appointment.patient_id == PatientProfile.id)
+                 .filter(Appointment.clinician_id == clinician.id)
+                 .distinct())
 
         patients = search_patients_by_fields(
             query, filters, request.args.get('search', '').strip()
@@ -158,6 +169,8 @@ def patient_folder(patient_id):
         clinician = get_clinician()
 
         patient = PatientProfile.query.get_or_404(patient_id)
+        if not clinician_can_access_patient(clinician.id, patient.id):
+            return render_template('errors/403.html'), 403
 
         visits = Visit.query.filter_by(
             patient_id=patient.id
@@ -280,9 +293,9 @@ def add_visit(patient_id):
 
     clinician = get_clinician()
 
-    patient = PatientProfile.query.get_or_404(
-        patient_id
-    )
+    patient = PatientProfile.query.get_or_404(patient_id)
+    if not clinician_can_access_patient(clinician.id, patient.id):
+        return render_template('errors/403.html'), 403
 
     if request.method == 'POST':
         try:
@@ -399,6 +412,9 @@ def add_visit(patient_id):
                     instructions=request.form.get('instructions', '').strip() or None,
                 )
                 db.session.add(prescription)
+            record_audit('visit_created', 'visit', visit.id,
+                         {'patient_id': patient.id,
+                          'prescription_created': bool(medication)})
             db.session.commit()
 
             flash(
@@ -413,13 +429,19 @@ def add_visit(patient_id):
                 )
             )
 
-        except Exception as e:
+        except (TypeError, ValueError):
             db.session.rollback()
+            flash('Check the clinical measurements and required fields.', 'danger')
 
-            flash(
-                f'Error adding visit: {str(e)}',
-                'danger'
+            return render_template(
+                'clinician/add_visit.html',
+                patient=patient,
+                clinician=clinician
             )
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception('Unable to create visit')
+            flash('Unable to save the visit. Please try again.', 'danger')
 
             return render_template(
                 'clinician/add_visit.html',
@@ -459,6 +481,8 @@ def availability():
         clinician.working_hours = {'start': start, 'end': end}
         clinician.is_available = request.form.get('is_available') == 'on'
         try:
+            record_audit('availability_updated', 'clinician', clinician.id,
+                         {'working_days': days, 'is_available': clinician.is_available})
             db.session.commit()
             flash('Availability updated.', 'success')
             return redirect(url_for('clinician.availability'))
@@ -486,6 +510,9 @@ def time_off():
         except ValueError:
             flash('Enter valid time-off dates and times.', 'danger')
             return redirect(url_for('clinician.time_off'))
+        if start_date < date.today():
+            flash('Time off cannot start in the past.', 'danger')
+            return redirect(url_for('clinician.time_off'))
         if end_date < start_date or (not full_day and start_time >= end_time):
             flash('The time-off end must be after its start.', 'danger')
             return redirect(url_for('clinician.time_off'))
@@ -510,6 +537,9 @@ def time_off():
         )
         try:
             db.session.add(entry)
+            db.session.flush()
+            record_audit('time_off_created', 'clinician_time_off', entry.id,
+                         {'full_day': full_day})
             db.session.commit()
             flash('Time off added and blocked from appointment booking.', 'success')
         except Exception:
@@ -533,6 +563,7 @@ def cancel_time_off(entry_id):
         return jsonify({'error': 'Unauthorized'}), 403
     entry.status = 'cancelled'
     try:
+        record_audit('time_off_cancelled', 'clinician_time_off', entry.id)
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -649,23 +680,25 @@ def update_appointment(appointment_id):
 
         new_status = data.get('status')
 
-        allowed_statuses = [
-            'pending',
-            'confirmed',
-            'checked_in',
-            'completed',
-            'cancelled',
-            'rejected',
-            'no_show',
-        ]
+        old_status = appointment.status
+        allowed_transitions = {
+            'pending': {'confirmed', 'rejected', 'cancelled'},
+            'confirmed': {'checked_in', 'completed', 'cancelled', 'no_show'},
+            'checked_in': {'completed'},
+            'completed': set(),
+            'cancelled': set(),
+            'rejected': set(),
+            'no_show': set(),
+        }
 
-        if new_status not in allowed_statuses:
+        if new_status != old_status and new_status not in allowed_transitions.get(old_status, set()):
             return jsonify({
-                'error': 'Invalid status'
-            }), 400
+                'error': f'Cannot change a {old_status.replace("_", " ")} appointment to {str(new_status).replace("_", " ")}.'
+            }), 409
 
         appointment.status = new_status
-
+        record_audit('appointment_status_updated', 'appointment', appointment.id,
+                     {'from': old_status, 'to': new_status})
         db.session.commit()
 
         return jsonify({

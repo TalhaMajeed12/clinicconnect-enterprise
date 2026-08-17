@@ -3,6 +3,7 @@ from app import db
 from app.models import User, PatientProfile, Visit, Appointment, Payment, Prescription
 from app.utils.translations import t
 from datetime import datetime
+from app.utils.audit import record_audit
 
 patient_bp = Blueprint('patient', __name__)
 
@@ -122,7 +123,7 @@ def cancel_appointment(appointment_id):
         return redirect(url_for('patient.appointments'))
 
     appointment.status = 'cancelled'
-
+    record_audit('appointment_cancelled', 'appointment', appointment.id)
     db.session.commit()
 
     flash(

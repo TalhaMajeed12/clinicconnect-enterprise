@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from secrets import token_hex
 from sqlalchemy import func
 from app.utils.appointment_slots import available_slots, is_available_slot
+from app.utils.audit import record_audit
 
 appointments_bp = Blueprint('appointments', __name__)
 
@@ -75,6 +76,9 @@ def book():
             duration=duration
         )
         db.session.add(appointment)
+        db.session.flush()
+        record_audit('appointment_requested', 'appointment', appointment.id,
+                     {'clinician_id': clinician.id})
         db.session.commit()
         
         flash(t('Appointment booked! Please complete payment.'), 'success')
@@ -174,6 +178,9 @@ def guest_request():
     item.email = str(data.get('email', '')).strip()[:254] or None
     item.reason = str(data.get('reason', '')).strip()[:1000] or None
     db.session.add(item)
+    db.session.flush()
+    record_audit('guest_appointment_requested', 'appointment_request', item.id,
+                 {'clinician_id': clinician.id})
     db.session.commit()
     return jsonify({
         'success': True, 'reference': item.reference,
@@ -206,6 +213,8 @@ def review(appointment_id):
         clinician_id=appointment.clinician_id).one()
     appointment.clinician.average_rating = float(aggregate[0] or 0)
     appointment.clinician.total_reviews = int(aggregate[1] or 0)
+    record_audit('doctor_review_created', 'appointment', appointment.id,
+                 {'rating': rating})
     db.session.commit()
     flash('Thank you for reviewing your clinician.', 'success')
     return redirect(url_for('patient.appointments'))

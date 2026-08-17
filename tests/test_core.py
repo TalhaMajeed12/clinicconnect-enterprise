@@ -98,6 +98,12 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn(b'Return home', missing.data)
         self.assertNotIn(b'Traceback', missing.data)
 
+    def test_authentication_pages_remain_focused(self):
+        for path in ('/auth/login', '/auth/clinician/login', '/auth/admin/login'):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200)
+            self.assertNotIn(b'id="clinical-chat-toggle"', response.data)
+
     def test_admin_can_add_clinician_with_required_contact_details(self):
         self._session_as(self.admin)
         response = self.client.post('/admin/add-clinician', data={
@@ -207,6 +213,9 @@ class CoreFlowTests(unittest.TestCase):
         self.assertNotIn('Guest Patient', item._full_name)
         self.assertNotIn('03001234567', item._phone)
         self.assertIn('reference', response.get_json())
+        audit = AuditLog.query.filter_by(action='guest_appointment_requested').one()
+        self.assertEqual(audit.resource_id, item.id)
+        self.assertNotIn('Guest Patient', json.dumps(audit.details or {}))
 
         self._session_as(self.admin)
         staff_page = self.client.get('/admin/intake-requests')
@@ -304,6 +313,8 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.get_json()['success'])
         self.assertEqual(db.session.get(Appointment, appointment.id).status, 'completed')
+        audit = AuditLog.query.filter_by(action='appointment_status_updated').one()
+        self.assertEqual(audit.details, {'from': 'confirmed', 'to': 'completed'})
 
     def test_inactive_clinician_cannot_login(self):
         self.clinician_user.is_active = False
@@ -463,6 +474,12 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn(b'Patient number', fielded.data)
 
     def test_clinician_patient_list_survives_unreadable_protected_fields(self):
+        db.session.add(Appointment(
+            patient_id=self.patient.id,
+            clinician_id=self.clinician.id,
+            appointment_date=datetime.utcnow() + timedelta(days=1),
+        ))
+        db.session.commit()
         self._session_as(self.clinician_user)
         original_key = self.app.config['ENCRYPTION_KEY']
         self.app.config['ENCRYPTION_KEY'] = 'invalid-key'
@@ -473,6 +490,39 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotIn(b'Error loading patients', response.data)
         self.assertIn(f'CC-P{self.patient.id:06d}'.encode(), response.data)
+
+    def test_clinician_cannot_access_an_unassigned_patient_by_direct_url(self):
+        outsider_user = self._user('private-patient', 'patient', 'private@example.test', '9911')
+        outsider = PatientProfile(user_id=outsider_user.id)
+        db.session.add(outsider)
+        db.session.commit()
+        self._session_as(self.clinician_user)
+
+        folder = self.client.get(f'/clinician/patient/{outsider.id}')
+        visit = self.client.get(f'/clinician/add_visit/{outsider.id}')
+
+        self.assertEqual(folder.status_code, 403)
+        self.assertEqual(visit.status_code, 403)
+        self.assertNotIn(b'private@example.test', folder.data)
+
+    def test_completed_appointment_cannot_be_reopened(self):
+        appointment = Appointment(
+            patient_id=self.patient.id,
+            clinician_id=self.clinician.id,
+            appointment_date=datetime.utcnow() - timedelta(days=1),
+            status='completed',
+        )
+        db.session.add(appointment)
+        db.session.commit()
+        self._session_as(self.clinician_user)
+
+        response = self.client.post(
+            f'/clinician/appointment/{appointment.id}/update',
+            json={'status': 'confirmed'},
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(db.session.get(Appointment, appointment.id).status, 'completed')
 
     def test_clinical_chatbot_is_public_bilingual_and_escalates_emergencies(self):
         unauthenticated = self.client.post(
