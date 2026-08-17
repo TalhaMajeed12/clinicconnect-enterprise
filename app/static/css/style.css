@@ -80,6 +80,32 @@ main.container { max-width: 1240px; }
 .quick-actions { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
 .quick-actions .btn { align-items: center; display: flex; gap: .65rem; justify-content: flex-start; min-height: 3.2rem; }
 .footer { background: var(--cc-navy) !important; border: 0 !important; color: #d6e0e6; }
+
+/* Coordinated interaction motion */
+a, button, .btn, .card, .nav-link, .dropdown-item, .list-group-item,
+.form-control, .form-select, .table tbody tr, .badge, .clinical-chat-toggle,
+.clinical-chat-panel, .clinical-chat-suggestions button {
+    transition-duration: 280ms;
+    transition-property: background-color, border-color, box-shadow, color, opacity, transform;
+    transition-timing-function: cubic-bezier(.2, .75, .25, 1);
+}
+.btn:hover, .btn:focus-visible { box-shadow: 0 .55rem 1.2rem rgb(18 110 106 / 18%); transform: translateY(-2px); }
+.btn:active { box-shadow: 0 .2rem .5rem rgb(18 110 106 / 14%); transform: translateY(0) scale(.98); transition-duration: 100ms; }
+.btn-success, .btn-info { background-color: #2f8f83; border-color: #2f8f83; color: #fff; }
+.btn-success:hover, .btn-info:hover { background-color: var(--cc-primary-dark); border-color: var(--cc-primary-dark); color: #fff; }
+.btn-warning { background-color: #f2b36f; border-color: #f2b36f; color: var(--cc-navy); }
+.btn-secondary { background-color: #637a87; border-color: #637a87; }
+.card:hover { border-color: #c9dfda; }
+.table tbody tr:hover { background-color: #eff8f6; }
+.form-control:hover, .form-select:hover { border-color: #9fc7c1; }
+.form-control:focus, .form-select:focus { border-color: var(--cc-primary); box-shadow: 0 0 0 .22rem rgb(18 110 106 / 14%); }
+.dropdown-item:hover, .dropdown-item:focus { background: var(--cc-mint); color: var(--cc-primary-dark); }
+.clinical-chat-toggle:hover { box-shadow: 0 .9rem 2rem rgb(18 110 106 / 28%); transform: translateY(-3px); }
+.clinical-chat-suggestions button:hover { background: var(--cc-primary); border-color: var(--cc-primary); color: #fff; transform: translateY(-1px); }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
 .footer .text-muted { color: #b8c8d2 !important; }
 .footer-brand { color: #fff; font-size: 1.15rem; font-weight: 700; }
 

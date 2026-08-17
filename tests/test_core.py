@@ -310,6 +310,18 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn(b'second@example.test', by_dob.data)
         self.assertNotIn(b'patient@example.test', by_dob.data)
 
+    def test_clinician_patient_list_survives_unreadable_protected_fields(self):
+        self._session_as(self.clinician_user)
+        original_key = self.app.config['ENCRYPTION_KEY']
+        self.app.config['ENCRYPTION_KEY'] = 'invalid-key'
+        try:
+            response = self.client.get('/clinician/patients')
+        finally:
+            self.app.config['ENCRYPTION_KEY'] = original_key
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(b'Error loading patients', response.data)
+        self.assertIn(f'CC-P{self.patient.id:06d}'.encode(), response.data)
+
     def test_clinical_chatbot_is_public_bilingual_and_escalates_emergencies(self):
         unauthenticated = self.client.post(
             '/chatbot/message', json={'message': 'How do I book?'}

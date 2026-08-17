@@ -1,10 +1,10 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from app import db
 from app.models import (User, PatientProfile, ClinicianProfile, ClinicianTimeOff,
                         Appointment, Visit, Prescription, Attendance)
 from datetime import datetime, date
 import traceback
-from app.utils.patient_search import search_patients
+from app.utils.patient_search import search_patients as filter_patients
 
 clinician_bp = Blueprint('clinician', __name__)
 
@@ -108,7 +108,7 @@ def patients_list():
 
         query = PatientProfile.query.join(User)
 
-        patients = search_patients(query, search)
+        patients = filter_patients(query, search)
 
         return render_template(
             'clinician/patients_list.html',
@@ -117,7 +117,7 @@ def patients_list():
         )
 
     except Exception as e:
-        print(f"Patients List Error: {str(e)}")
+        current_app.logger.exception('Patients list failed')
 
         flash('Error loading patients', 'danger')
 

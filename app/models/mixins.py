@@ -26,10 +26,12 @@ class EncryptionMixin:
     def decrypt_field(self, encrypted_value):
         if encrypted_value is None:
             return None
-        fernet = self._get_fernet()
         try:
+            fernet = self._get_fernet()
             return fernet.decrypt(encrypted_value.encode()).decode()
         except (InvalidToken, ValueError, TypeError):
-            current_app.logger.warning('Unable to decrypt a protected field')
+            current_app.logger.warning(
+                'Unable to decrypt a protected field; verify ENCRYPTION_KEY without rotating it'
+            )
             return None
  
