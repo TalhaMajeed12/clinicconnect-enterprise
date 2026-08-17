@@ -1,70 +1,46 @@
 {% extends "base.html" %}
-
 {% block title %}Home - ClinicConnect{% endblock %}
-
 {% block content %}
-<div class="row">
-    <div class="col-md-8 offset-md-2 text-center">
-        <h1 class="display-4">
-            <i class="fas fa-heartbeat text-primary"></i> {{ t('welcome_to_clinicconnect') }}
-        </h1>
-        <p class="lead">{{ t('trusted_healthcare') }}</p>
-        <hr class="my-4">
-        
-        <div class="row mt-5">
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <i class="fas fa-user-md fa-3x text-primary"></i>
-                        <h5 class="card-title mt-3">{{ t('for_patients') }}</h5>
-                        <p class="card-text">{{ t('patient_home_text') }}</p>
-                        {% if not session.get('user_id') %}
-                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">{{ t('login') }}</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <i class="fas fa-stethoscope fa-3x text-success"></i>
-                        <h5 class="card-title mt-3">{{ t('for_clinicians') }}</h5>
-                        <p class="card-text">{{ t('clinician_home_text') }}</p>
-                        {% if not session.get('user_id') %}
-                            <a href="{{ url_for('auth.clinician_login') }}" class="btn btn-success">{{ t('clinician_login') }}</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <i class="fas fa-user-shield fa-3x text-warning"></i>
-                        <h5 class="card-title mt-3">{{ t('for_admins') }}</h5>
-                        <p class="card-text">{{ t('admin_home_text') }}</p>
-                        {% if not session.get('user_id') %}
-                            <a href="{{ url_for('auth.admin_login') }}" class="btn btn-warning">{{ t('admin_login') }}</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {% if session.get('user_id') %}
-            <div class="mt-4">
-                <a href="
-                    {% if session.get('role') == 'admin' %}
-                        {{ url_for('admin.dashboard') }}
-                    {% elif session.get('role') == 'clinician' %}
-                        {{ url_for('clinician.dashboard') }}
-                    {% else %}
-                        {{ url_for('patient.dashboard') }}
-                    {% endif %}
-                " class="btn btn-primary btn-lg">
-                    Go to Dashboard
-                </a>
-            </div>
-        {% endif %}
+<section class="cc-hero mb-5">
+  <div class="position-relative" style="z-index:1">
+    <div class="hero-eyebrow mb-3">Connected care, made simpler</div>
+    <h1 class="mb-4">{{ t('welcome_to_clinicconnect') }}</h1>
+    <p class="lead mb-4">{{ t('trusted_healthcare') }}—from finding a clinician and booking a real-time slot to reviewing your care history.</p>
+    <div class="hero-actions">
+      {% if session.get('user_id') %}
+        <a href="{% if session.get('role') == 'admin' %}{{ url_for('admin.dashboard') }}{% elif session.get('role') == 'clinician' %}{{ url_for('clinician.dashboard') }}{% else %}{{ url_for('patient.dashboard') }}{% endif %}" class="btn btn-primary btn-lg">Open dashboard <i class="fas fa-arrow-right ms-2"></i></a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Patient login <i class="fas fa-arrow-right ms-2"></i></a>
+        <a href="#choose-role" class="btn btn-outline-primary btn-lg">Explore access options</a>
+      {% endif %}
     </div>
-</div>
+    <div class="trust-row">
+      <span class="trust-item"><i class="fas fa-shield-halved"></i> Role-based privacy</span>
+      <span class="trust-item"><i class="fas fa-calendar-check"></i> Live appointment slots</span>
+      <span class="trust-item"><i class="fas fa-language"></i> English &amp; Urdu</span>
+      <span class="trust-item"><i class="fas fa-clock-rotate-left"></i> Traceable activity</span>
+    </div>
+  </div>
+</section>
+
+<section id="choose-role" class="mb-5 pt-2">
+  <div class="section-heading">
+    <div class="hero-eyebrow mb-2">Choose your workspace</div>
+    <h2>One clinic, three focused experiences</h2>
+    <p class="text-muted">Each role sees the tools and information relevant to their work, keeping navigation simple and patient data appropriately restricted.</p>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-4"><article class="card role-card"><div class="card-body p-4"><span class="role-icon mb-4"><i class="fas fa-user"></i></span><h3 class="card-title">{{ t('for_patients') }}</h3><p class="text-muted">{{ t('patient_home_text') }}</p><a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary w-100 mt-2">{{ t('patient_login') }}</a></div></article></div>
+    <div class="col-md-4"><article class="card role-card"><div class="card-body p-4"><span class="role-icon mb-4"><i class="fas fa-stethoscope"></i></span><h3 class="card-title">{{ t('for_clinicians') }}</h3><p class="text-muted">{{ t('clinician_home_text') }}</p><a href="{{ url_for('auth.clinician_login') }}" class="btn btn-outline-primary w-100 mt-2">{{ t('clinician_login') }}</a></div></article></div>
+    <div class="col-md-4"><article class="card role-card admin"><div class="card-body p-4"><span class="role-icon mb-4"><i class="fas fa-user-shield"></i></span><h3 class="card-title">{{ t('for_admins') }}</h3><p class="text-muted">{{ t('admin_home_text') }}</p><a href="{{ url_for('auth.admin_login') }}" class="btn btn-outline-primary w-100 mt-2">{{ t('admin_login') }}</a></div></article></div>
+  </div>
+</section>
+
+<section class="feature-strip mb-4">
+  <div class="row g-4">
+    <div class="col-md-4"><div class="feature-item"><i class="fas fa-calendar-days"></i><div><h3 class="h6 text-white">Book without guessing</h3><p class="small">Select only open slots based on working hours, leave, capacity, and existing bookings.</p></div></div></div>
+    <div class="col-md-4"><div class="feature-item"><i class="fas fa-folder-open"></i><div><h3 class="h6 text-white">Keep care connected</h3><p class="small">Authorized users can follow appointments, visits, prescriptions, and medical history.</p></div></div></div>
+    <div class="col-md-4"><div class="feature-item"><i class="fas fa-comments"></i><div><h3 class="h6 text-white">Help for newcomers</h3><p class="small">The bilingual FAQ assistant explains the app while maintaining clear safety and privacy limits.</p></div></div></div>
+  </div>
+</section>
 {% endblock %}

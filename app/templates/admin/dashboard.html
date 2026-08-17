@@ -1,67 +1,18 @@
 {% extends "base.html" %}
-
 {% block content %}
 <div class="container-fluid">
-    <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
-    <hr>
-    
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5>Total Patients</h5>
-                    <h2>{{ total_patients or 0 }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5>Total Clinicians</h5>
-                    <h2>{{ total_clinicians or 0 }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark">
-                <div class="card-body">
-                    <h5>Total Appointments</h5>
-                    <h2>{{ total_appointments or 0 }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5>Revenue</h5>
-                    <h2>PKR {{ "{:,.0f}".format(total_revenue or 0) }}</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
-                </div>
-                <div class="card-body">
-                    <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary">
-                        <i class="fas fa-user-plus"></i> Add Clinician
-                    </a>
-                    <a href="{{ url_for('admin.patients') }}" class="btn btn-success">
-                        <i class="fas fa-users"></i> View Patients
-                    </a>
-                    <a href="{{ url_for('admin.clinicians') }}" class="btn btn-info">
-                        <i class="fas fa-user-md"></i> Manage Clinicians
-                    </a>
-                    <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary">
-                        <i class="fas fa-history"></i> Audit Logs
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+  <div class="page-heading"><div class="eyebrow">Clinic overview</div><h2 class="mb-1">Admin Dashboard</h2><p class="text-muted mb-0">Monitor operations and move quickly to common management tasks.</p></div>
+  <div class="row g-4">
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-stat"><div class="card-body"><span class="stat-icon"><i class="fas fa-users"></i></span><span class="stat-label">Total Patients</span><span class="stat-value">{{ total_patients or 0 }}</span></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-stat"><div class="card-body"><span class="stat-icon"><i class="fas fa-user-doctor"></i></span><span class="stat-label">Total Clinicians</span><span class="stat-value">{{ total_clinicians or 0 }}</span></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-stat"><div class="card-body"><span class="stat-icon"><i class="fas fa-calendar-check"></i></span><span class="stat-label">Total Appointments</span><span class="stat-value">{{ total_appointments or 0 }}</span></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-stat"><div class="card-body"><span class="stat-icon"><i class="fas fa-wallet"></i></span><span class="stat-label">Revenue</span><span class="stat-value">PKR {{ "{:,.0f}".format(total_revenue or 0) }}</span></div></div></div>
+  </div>
+  <section class="card mt-4"><div class="card-header"><h5><i class="fas fa-bolt me-2 text-primary"></i>Quick Actions</h5></div><div class="card-body quick-actions">
+    <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary"><i class="fas fa-user-plus"></i>Add Clinician</a>
+    <a href="{{ url_for('admin.patients') }}" class="btn btn-outline-primary"><i class="fas fa-users"></i>View Patients</a>
+    <a href="{{ url_for('admin.clinicians') }}" class="btn btn-outline-primary"><i class="fas fa-user-md"></i>Manage Clinicians</a>
+    <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline-secondary"><i class="fas fa-history"></i>Activity Records</a>
+  </div></section>
 </div>
 {% endblock %}

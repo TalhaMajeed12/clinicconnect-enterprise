@@ -2,40 +2,35 @@
 
 {% block content %}
 <div class="container-fluid">
-    <h2>Welcome, Dr. {{ clinician.user.full_name if clinician.user else 'Clinician' }}</h2>
-    <hr>
+    <div class="page-heading"><div class="eyebrow">Clinical workspace</div><h2 class="mb-1">Welcome, Dr. {{ clinician.user.full_name if clinician.user else 'Clinician' }}</h2><p class="text-muted mb-0">Your patients, schedule, and care tasks in one place.</p></div>
     
     <!-- Statistics Cards -->
     <div class="row">
         <div class="col-md-3">
-            <div class="card bg-primary text-white">
+            <div class="card dashboard-stat">
                 <div class="card-body">
-                    <h5>Total Patients</h5>
-                    <h2>{{ total_patients or 0 }}</h2>
+                    <span class="stat-icon"><i class="fas fa-users"></i></span><span class="stat-label">Total Patients</span><span class="stat-value">{{ total_patients or 0 }}</span>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success text-white">
+            <div class="card dashboard-stat">
                 <div class="card-body">
-                    <h5>My Appointments</h5>
-                    <h2>{{ total_appointments or 0 }}</h2>
+                    <span class="stat-icon"><i class="fas fa-calendar-check"></i></span><span class="stat-label">My Appointments</span><span class="stat-value">{{ total_appointments or 0 }}</span>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-warning text-dark">
+            <div class="card dashboard-stat">
                 <div class="card-body">
-                    <h5>Pending</h5>
-                    <h2>{{ pending_appointments or 0 }}</h2>
+                    <span class="stat-icon"><i class="fas fa-hourglass-half"></i></span><span class="stat-label">Pending</span><span class="stat-value">{{ pending_appointments or 0 }}</span>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-info text-white">
+            <div class="card dashboard-stat">
                 <div class="card-body">
-                    <h5>Today's Appointments</h5>
-                    <h2>{{ appointments|length }}</h2>
+                    <span class="stat-icon"><i class="fas fa-calendar-day"></i></span><span class="stat-label">Today's Appointments</span><span class="stat-value">{{ appointments|length }}</span>
                 </div>
             </div>
         </div>
@@ -48,7 +43,7 @@
                 <div class="card-header">
                     <h5>Quick Actions</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body quick-actions">
                     <a href="{{ url_for('clinician.add_patient') }}" class="btn btn-primary">
                         <i class="fas fa-user-plus"></i> Add Patient
                     </a>
