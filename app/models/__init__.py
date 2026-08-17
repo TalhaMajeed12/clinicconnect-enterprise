@@ -9,6 +9,7 @@ from .notification import Notification
 from .system import SystemSetting, Attendance
 from .time_off import ClinicianTimeOff
 from .password_reset import PasswordResetToken
+from .consultation import ConsultationMessage
 
 __all__ = [
     "User",
@@ -26,4 +27,5 @@ __all__ = [
     "Attendance",
     "ClinicianTimeOff",
     "PasswordResetToken",
+    "ConsultationMessage",
 ]

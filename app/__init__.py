@@ -123,6 +123,7 @@ def create_app(config_name='default'):
     from app.routes.payment import payment_bp
     from app.routes.api import api_bp
     from app.routes.chatbot import chatbot_bp
+    from app.routes.consultations import consultations_bp
     csrf.exempt(api_bp)
     
     app.register_blueprint(main_bp)
@@ -134,6 +135,7 @@ def create_app(config_name='default'):
     app.register_blueprint(payment_bp, url_prefix='/payment')
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(chatbot_bp, url_prefix='/chatbot')
+    app.register_blueprint(consultations_bp, url_prefix='/consultations')
     
     # Error handlers
     register_error_handlers(app)
@@ -151,7 +153,9 @@ def create_app(config_name='default'):
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response.headers['Permissions-Policy'] = (
-            'camera=(), microphone=(), geolocation=(), payment=()'
+            'camera=(self "https://meet.jit.si"), '
+            'microphone=(self "https://meet.jit.si"), '
+            'geolocation=(), payment=()'
         )
         response.headers['Content-Security-Policy'] = '; '.join([
             "default-src 'self'",
@@ -164,6 +168,7 @@ def create_app(config_name='default'):
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
             "font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+            "frame-src https://meet.jit.si",
         ])
         
         # Cache prevention - UNIVERSAL FIX

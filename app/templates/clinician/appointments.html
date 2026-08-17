@@ -62,6 +62,11 @@
                                     <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    {% if appointment.status != 'cancelled' %}
+                                    <a href="{{ url_for('consultations.room', appointment_id=appointment.id) }}" class="btn btn-sm btn-primary" title="Open video consultation and secure messages">
+                                        <i class="fas fa-video"></i>
+                                    </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}

@@ -54,6 +54,7 @@
                         {% else %}
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.dashboard' }}" href="{{ url_for('patient.dashboard') }}"><i class="fas fa-chart-pie"></i> {{ t('dashboard') }}</a></li>
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.history' }}" href="{{ url_for('patient.history') }}"><i class="fas fa-history"></i> {{ t('history') }}</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['patient.appointments', 'consultations.room'] }}" href="{{ url_for('patient.appointments') }}"><i class="fas fa-video"></i> Consultations</a></li>
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'appointments.book' }}" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i> {{ t('book_appointment') }}</a></li>
                       
                         {% endif %}

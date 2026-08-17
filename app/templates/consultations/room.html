@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Secure consultation{% endblock %}
+{% block content %}
+<div class="consultation-heading mb-4">
+  <div>
+    <span class="eyebrow">Private appointment space</span>
+    <h1 class="h2 mb-1"><i class="fas fa-video me-2"></i>Video consultation</h1>
+    <p class="text-muted mb-0">{{ appointment.appointment_date.strftime('%d %b %Y, %I:%M %p') }} · Appointment #{{ appointment.id }}</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('patient.appointments') if current_user.role == 'patient' else url_for('clinician.appointments') }}">Back to appointments</a>
+</div>
+
+<div class="alert alert-info"><i class="fas fa-shield-alt me-2"></i>Only the assigned patient and clinician can open this page. Video is provided through an external encrypted WebRTC service and is not recorded by ClinicConnect.</div>
+
+<div class="row g-4 consultation-layout">
+  <section class="col-lg-8" aria-label="Video consultation">
+    {% if appointment.status == 'confirmed' %}
+      <div class="video-consultation-frame">
+        <iframe src="{{ video_url }}" title="ClinicConnect video consultation" allow="camera; microphone; fullscreen; display-capture" referrerpolicy="no-referrer" loading="eager"></iframe>
+      </div>
+    {% else %}
+      <div class="card p-5 text-center"><i class="fas fa-video-slash fa-3x text-muted mb-3"></i><h2 class="h4">Video room unavailable</h2><p class="text-muted mb-0">The appointment must be confirmed before its video room opens. Secure messaging remains available unless the appointment is cancelled.</p></div>
+    {% endif %}
+  </section>
+  <aside class="col-lg-4">
+    <div class="card consultation-messages-card">
+      <div class="card-header"><strong><i class="fas fa-lock me-2"></i>Secure messages</strong><small>Encrypted before database storage</small></div>
+      <div class="consultation-messages" aria-live="polite">
+        {% for message in messages %}
+          <article class="consultation-message {{ 'mine' if message.sender_id == current_user.id else 'theirs' }}">
+            <div>{{ message.body or '[Unable to decrypt message]' }}</div>
+            <small>{{ 'You' if message.sender_id == current_user.id else message.sender.full_name }} · {{ message.created_at.strftime('%d %b, %I:%M %p') }}</small>
+          </article>
+        {% else %}
+          <p class="text-muted text-center my-auto">No messages yet. Use this space for appointment-related communication.</p>
+        {% endfor %}
+      </div>
+      <form method="POST" action="{{ url_for('consultations.send_message', appointment_id=appointment.id) }}" class="consultation-message-form">
+        <label class="visually-hidden" for="consultation-message">Message</label>
+        <textarea id="consultation-message" name="message" class="form-control" maxlength="2000" rows="2" placeholder="Write an appointment-related message" required {% if appointment.status == 'cancelled' %}disabled{% endif %}></textarea>
+        <button class="btn btn-primary" type="submit" {% if appointment.status == 'cancelled' %}disabled{% endif %}><i class="fas fa-paper-plane"></i><span>Send</span></button>
+      </form>
+    </div>
+  </aside>
+</div>
+{% endblock %}

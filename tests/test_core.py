@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 from app import create_app
 from app.extensions import db
 from app.models import (Appointment, AuditLog, ClinicianProfile, ClinicianTimeOff,
-                        PasswordResetToken, PatientProfile, User)
+                        ConsultationMessage, PasswordResetToken, PatientProfile, User)
 
 
 class CoreFlowTests(unittest.TestCase):
@@ -107,6 +107,37 @@ class CoreFlowTests(unittest.TestCase):
         self.client.post(f'/patient/cancel-appointment/{appointment.id}')
         self.assertNotEqual(db.session.get(Appointment, appointment.id).status, 'cancelled')
 
+    def test_consultation_is_limited_to_assigned_patient_and_clinician(self):
+        appointment = Appointment(
+            patient_id=self.patient.id, clinician_id=self.clinician.id,
+            appointment_date=datetime.utcnow() + timedelta(days=1), status='confirmed'
+        )
+        db.session.add(appointment)
+        db.session.commit()
+
+        self._session_as(self.patient_user)
+        page = self.client.get(f'/consultations/{appointment.id}')
+        self.assertEqual(page.status_code, 200)
+        self.assertIn(b'Video consultation', page.data)
+        sent = self.client.post(
+            f'/consultations/{appointment.id}/messages',
+            data={'message': 'Please bring the previous report.'}
+        )
+        self.assertEqual(sent.status_code, 302)
+        message = ConsultationMessage.query.one()
+        self.assertNotIn('Please bring', message._body)
+        self.assertEqual(message.body, 'Please bring the previous report.')
+
+        self._session_as(self.clinician_user)
+        clinician_page = self.client.get(f'/consultations/{appointment.id}')
+        self.assertIn(b'Please bring the previous report.', clinician_page.data)
+
+        other_user = self._user('outsider', 'patient', 'outsider@example.test', '4500')
+        db.session.add(PatientProfile(user_id=other_user.id))
+        db.session.commit()
+        self._session_as(other_user)
+        self.assertEqual(self.client.get(f'/consultations/{appointment.id}').status_code, 403)
+
     def test_booking_rejects_conflict(self):
         slot = (datetime.utcnow() + timedelta(days=2)).replace(second=0, microsecond=0)
         existing = Appointment(patient_id=self.patient.id, clinician_id=self.clinician.id,
@@ -202,7 +233,14 @@ class CoreFlowTests(unittest.TestCase):
             response.headers['Referrer-Policy'],
             'strict-origin-when-cross-origin',
         )
-        self.assertIn('camera=()', response.headers['Permissions-Policy'])
+        self.assertIn(
+            'camera=(self "https://meet.jit.si")',
+            response.headers['Permissions-Policy'],
+        )
+        self.assertIn(
+            'microphone=(self "https://meet.jit.si")',
+            response.headers['Permissions-Policy'],
+        )
 
     @patch('app.routes.auth.send_password_reset_link', return_value=True)
     def test_patient_password_reset_is_single_use(self, send_reset):

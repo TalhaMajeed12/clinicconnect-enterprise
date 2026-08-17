@@ -400,3 +400,108 @@ main.container { max-width: 1240px; }
 .btn-primary:hover, .btn-primary:focus { background: var(--cc-primary-dark); border-color: var(--cc-primary-dark); }
 .table thead th { background: #edf6f4; }
 .footer { background: var(--cc-navy) !important; border: 0 !important; color: #d6e0e6; }
+.consultation-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.video-consultation-frame {
+    min-height: 620px;
+    overflow: hidden;
+    border: 1px solid rgba(13, 90, 84, 0.18);
+    border-radius: 1.25rem;
+    background: #122a38;
+    box-shadow: 0 18px 48px rgba(15, 47, 59, 0.18);
+}
+
+.video-consultation-frame iframe {
+    display: block;
+    width: 100%;
+    min-height: 620px;
+    border: 0;
+}
+
+.consultation-messages-card {
+    min-height: 620px;
+    overflow: hidden;
+    border: 1px solid rgba(13, 90, 84, 0.14);
+    border-radius: 1.25rem;
+}
+
+.consultation-messages-card .card-header {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.1rem;
+    background: #e9f6f3;
+    border-bottom: 1px solid rgba(13, 90, 84, 0.12);
+}
+
+.consultation-messages-card .card-header small {
+    color: #5f747b;
+}
+
+.consultation-messages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: .75rem;
+    height: 448px;
+    padding: 1rem;
+    overflow-y: auto;
+    background: #f8fbfa;
+}
+
+.consultation-message {
+    max-width: 88%;
+    padding: .7rem .85rem;
+    border-radius: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.consultation-message.mine {
+    align-self: flex-end;
+    color: #fff;
+    background: #147d75;
+    border-bottom-right-radius: .3rem;
+}
+
+.consultation-message.theirs {
+    align-self: flex-start;
+    color: #18343d;
+    background: #fff;
+    border: 1px solid #dbe8e5;
+    border-bottom-left-radius: .3rem;
+}
+
+.consultation-message small {
+    display: block;
+    margin-top: .3rem;
+    opacity: .78;
+    font-size: .72rem;
+}
+
+.consultation-message-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: .6rem;
+    padding: .8rem;
+    border-top: 1px solid #dbe8e5;
+}
+
+.consultation-message-form textarea {
+    resize: none;
+}
+
+.consultation-message-form .btn span {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    .consultation-heading { align-items: flex-start; flex-direction: column; }
+    .video-consultation-frame,
+    .video-consultation-frame iframe { min-height: 520px; }
+    .consultation-messages-card { min-height: 540px; }
+    .consultation-messages { height: 390px; }
+}

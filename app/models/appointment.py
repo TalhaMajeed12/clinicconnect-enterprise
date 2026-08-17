@@ -1,4 +1,5 @@
 from datetime import datetime
+import secrets
 
 from app.extensions import db
 
@@ -34,6 +35,10 @@ class Appointment(db.Model):
 
     reminder_sent = db.Column(db.Boolean, default=False)
     reminder_sent_at = db.Column(db.DateTime)
+    video_room_token = db.Column(
+        db.String(64), unique=True, nullable=False,
+        default=lambda: secrets.token_urlsafe(32)
+    )
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(

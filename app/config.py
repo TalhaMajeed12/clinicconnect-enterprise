@@ -88,6 +88,9 @@ class Config:
         'PUBLIC_REGISTRATION_ENABLED', 'False'
     ) == 'True'
     AUDIT_RETENTION_DAYS = int(os.environ.get('AUDIT_RETENTION_DAYS', 30))
+    VIDEO_CONSULTATION_BASE_URL = os.environ.get(
+        'VIDEO_CONSULTATION_BASE_URL', 'https://meet.jit.si'
+    )
     
     # Logging
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
