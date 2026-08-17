@@ -25,7 +25,31 @@
 }
 
 body { color: var(--cc-navy); }
+html { scroll-behavior: smooth; }
 main.container { max-width: 1240px; }
+
+.skip-link {
+    background: var(--cc-navy);
+    border-radius: 0 0 .6rem .6rem;
+    color: #fff;
+    left: 1rem;
+    padding: .65rem 1rem;
+    position: fixed;
+    top: -5rem;
+    transition: top 180ms ease;
+    z-index: 2000;
+}
+
+.skip-link:focus { color: #fff; top: 0; }
+
+#main-content:focus { outline: none; }
+
+:focus-visible {
+    outline: 3px solid rgba(238, 123, 99, .65);
+    outline-offset: 3px;
+}
+
+button[aria-busy="true"] { cursor: wait; }
 .navbar {
     background: rgb(255 255 255 / 96%) !important;
     border-bottom: 1px solid var(--cc-border);

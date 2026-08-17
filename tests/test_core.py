@@ -292,6 +292,8 @@ class CoreFlowTests(unittest.TestCase):
 
     def test_security_headers_are_present(self):
         response = self.client.get('/')
+        self.assertIn(b'images/favicon.svg', response.data)
+        self.assertIn(b'id="main-content"', response.data)
         self.assertIn("default-src 'self'", response.headers['Content-Security-Policy'])
         self.assertEqual(
             response.headers['Referrer-Policy'],
