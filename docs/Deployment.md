@@ -61,3 +61,6 @@ Store backups outside the repository and test restoration into a disposable data
 5. Review Render and Brevo logs without exposing secrets or patient data.
 
 The current free deployment uses one Gunicorn worker because filesystem-backed sessions and in-memory rate limiting are process-local. Configure a managed Redis URL before scaling to multiple workers.
+# Video deployment requirements
+
+Apply migration `006` before the matching application release. Configure `VIDEO_CONSULTATION_BASE_URL`, `VIDEO_JOIN_EARLY_MINUTES`, and `VIDEO_JOIN_GRACE_MINUTES`; defaults are documented in `.env.example`. HTTPS is mandatory for browser camera/microphone permission. The default public Jitsi endpoint is for FYP demonstration; production use requires an appropriate provider/privacy agreement and reliable TURN-capable infrastructure.

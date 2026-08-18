@@ -3,7 +3,6 @@ from app import db
 from app.models import (User, PatientProfile, ClinicianProfile, ClinicianTimeOff,
                         Appointment, Visit, Prescription, Attendance)
 from datetime import datetime, date
-import traceback
 from app.utils.patient_search import search_patients_by_fields
 from app.utils.audit import record_audit
 
@@ -95,9 +94,8 @@ def dashboard():
             upcoming_time_off=upcoming_time_off,
         )
 
-    except Exception as e:
-        print(f"Dashboard Error: {str(e)}")
-        print(traceback.format_exc())
+    except Exception:
+        current_app.logger.exception('Unable to load clinician dashboard')
 
         flash('Error loading dashboard', 'danger')
 
@@ -120,15 +118,22 @@ def patients_list():
     if access_check:
         return access_check
 
+    clinician = get_clinician()
+    if not clinician:
+        flash('Your clinician profile is unavailable. Contact an administrator.', 'danger')
+        return redirect(url_for('auth.clinician_login'))
+
     try:
-        clinician = get_clinician()
         filters = {key: request.args.get(key, '').strip()
                    for key in ('patient_no', 'name', 'contact', 'date_of_birth')}
 
+        # Avoid SELECT DISTINCT across PostgreSQL JSON columns. The ID subquery
+        # returns each authorized patient once on both PostgreSQL and SQLite.
+        assigned_patient_ids = db.session.query(Appointment.patient_id).filter(
+            Appointment.clinician_id == clinician.id
+        )
         query = (PatientProfile.query.join(User)
-                 .join(Appointment, Appointment.patient_id == PatientProfile.id)
-                 .filter(Appointment.clinician_id == clinician.id)
-                 .distinct())
+                 .filter(PatientProfile.id.in_(assigned_patient_ids)))
 
         patients = search_patients_by_fields(
             query, filters, request.args.get('search', '').strip()
@@ -141,7 +146,7 @@ def patients_list():
             search_filters=filters,
         )
 
-    except Exception as e:
+    except Exception:
         current_app.logger.exception('Patients list failed')
 
         flash('Error loading patients', 'danger')
@@ -190,8 +195,8 @@ def patient_folder(patient_id):
             clinician=clinician
         )
 
-    except Exception as e:
-        print(f"Patient Folder Error: {str(e)}")
+    except Exception:
+        current_app.logger.exception('Unable to load patient folder')
 
         flash('Error loading patient details', 'danger')
 
@@ -297,12 +302,32 @@ def add_visit(patient_id):
     if not clinician_can_access_patient(clinician.id, patient.id):
         return render_template('errors/403.html'), 403
 
+    appointment_id = request.form.get('appointment_id', type=int) or request.args.get('appointment_id', type=int)
+    appointment = db.session.get(Appointment, appointment_id) if appointment_id else None
+    if appointment and (
+        appointment.patient_id != patient.id
+        or appointment.clinician_id != clinician.id
+    ):
+        return render_template('errors/403.html'), 403
+    if appointment and appointment.status not in {'confirmed', 'checked_in', 'completed'}:
+        flash('A visit can only be linked to a confirmed or completed appointment.', 'warning')
+        return redirect(url_for('clinician.appointments'))
+    if appointment and appointment.visits:
+        flash('A visit record already exists for this appointment.', 'info')
+        return redirect(url_for('clinician.patient_folder', patient_id=patient.id))
+
     if request.method == 'POST':
         try:
             visit = Visit(
                 patient_id=patient.id,
                 clinician_id=clinician.id,
+                appointment_id=appointment.id if appointment else None,
                 visit_date=datetime.utcnow(),
+                visit_type=(
+                    'Video Consultation'
+                    if appointment and appointment.appointment_type == 'video'
+                    else 'In-Person'
+                ),
 
                 chief_complaint=request.form.get(
                     'chief_complaint'
@@ -436,7 +461,8 @@ def add_visit(patient_id):
             return render_template(
                 'clinician/add_visit.html',
                 patient=patient,
-                clinician=clinician
+                clinician=clinician,
+                appointment=appointment,
             )
         except Exception:
             db.session.rollback()
@@ -446,13 +472,15 @@ def add_visit(patient_id):
             return render_template(
                 'clinician/add_visit.html',
                 patient=patient,
-                clinician=clinician
+                clinician=clinician,
+                appointment=appointment,
             )
 
     return render_template(
         'clinician/add_visit.html',
         patient=patient,
-        clinician=clinician
+        clinician=clinician,
+        appointment=appointment,
     )
 
 
@@ -591,6 +619,7 @@ def appointments():
             'status',
             'all'
         )
+        appointment_type = request.args.get('type', 'all')
 
         date_filter = request.args.get(
             'date',
@@ -605,6 +634,11 @@ def appointments():
             query = query.filter_by(
                 status=status
             )
+
+        if appointment_type in {'in_person', 'video'}:
+            query = query.filter_by(appointment_type=appointment_type)
+        else:
+            appointment_type = 'all'
 
         if date_filter:
             try:
@@ -631,11 +665,12 @@ def appointments():
             appointments=appointments,
             clinician=clinician,
             status_filter=status,
+            type_filter=appointment_type,
             date_filter=date_filter
         )
 
-    except Exception as e:
-        print(f"Appointments Error: {str(e)}")
+    except Exception:
+        current_app.logger.exception('Unable to load clinician appointments')
 
         flash(
             'Error loading appointments',
@@ -696,7 +731,16 @@ def update_appointment(appointment_id):
                 'error': f'Cannot change a {old_status.replace("_", " ")} appointment to {str(new_status).replace("_", " ")}.'
             }), 409
 
+        if new_status == 'completed' and not appointment.visits:
+            return jsonify({
+                'error': 'Record the visit before marking this appointment completed.'
+            }), 409
+
         appointment.status = new_status
+        if new_status == 'completed' and appointment.appointment_type == 'video':
+            if appointment.video_session:
+                appointment.video_session.status = 'ended'
+                appointment.video_session.ended_at = datetime.utcnow()
         record_audit('appointment_status_updated', 'appointment', appointment.id,
                      {'from': old_status, 'to': new_status})
         db.session.commit()
@@ -752,17 +796,22 @@ def toggle_attendance():
 
         attendance.last_updated = datetime.utcnow()
 
+        record_audit(
+            'daily_attendance_updated', 'clinician', clinician.id,
+            {'status': 'present' if attendance.status == 'online' else 'away'}
+        )
+
         db.session.commit()
 
         return jsonify({
             'status': attendance.status
         })
 
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-
+        current_app.logger.exception('Unable to update clinician attendance')
         return jsonify({
-            'error': str(e)
+            'error': 'Unable to update daily attendance.'
         }), 500
 
 

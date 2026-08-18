@@ -40,7 +40,8 @@
                             <th>Experience</th>
                             <th>Fee (PKR)</th>
                             <th>Pre-payment (25%)</th>
-                            <th>Status</th>
+                            <th>Account</th>
+                            <th>Online booking</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -56,6 +57,7 @@
                                 <td><strong>PKR {{ clinician.consultation_fee|float }}</strong></td>
                                 <td><span class="badge bg-warning">PKR {{ (clinician.consultation_fee|float * 0.25)|int }}</span></td>
                                 <td><span class="badge bg-{{ 'success' if clinician.user and clinician.user.is_active else 'secondary' }}">{{ 'Active' if clinician.user and clinician.user.is_active else 'Inactive' }}</span></td>
+                                <td><span class="badge bg-{{ 'success' if clinician.is_available else 'warning' }}">{{ 'Available' if clinician.is_available else 'Setup required' }}</span></td>
                                 <td>
                                     <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i>
@@ -71,7 +73,7 @@
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-3">
+                                <td colspan="10" class="text-center text-muted py-3">
                                     <i class="fas fa-user-md fa-2x d-block mb-2"></i>
                                     No clinicians found.
                                 </td>

@@ -94,6 +94,12 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" role="switch" id="is_available" name="is_available" checked>
+                    <label class="form-check-label" for="is_available"><strong>Available for online booking</strong></label>
+                    <div class="form-text">Uses the default Monday–Friday, 9:00 AM–5:00 PM schedule until the clinician customizes Availability.</div>
+                </div>
                 
                 <button type="submit" class="btn btn-primary">Add Clinician</button>
                 <a href="{{ url_for('admin.clinicians') }}" class="btn btn-secondary">Cancel</a>

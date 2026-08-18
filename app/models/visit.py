@@ -10,7 +10,9 @@ class Visit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient_profiles.id'))
     clinician_id = db.Column(db.Integer, db.ForeignKey('clinician_profiles.id'))
-    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=True)
+    appointment_id = db.Column(
+        db.Integer, db.ForeignKey('appointments.id'), nullable=True, unique=True
+    )
     
     visit_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     visit_type = db.Column(db.String(50))

@@ -30,6 +30,12 @@ class DoctorReview(db.Model, EncryptionMixin):
 
 class GuestAppointmentRequest(db.Model, EncryptionMixin):
     __tablename__ = 'guest_appointment_requests'
+    __table_args__ = (
+        db.CheckConstraint(
+            "appointment_type IN ('in_person', 'video')",
+            name='ck_guest_request_type',
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     reference = db.Column(db.String(20), nullable=False, unique=True, index=True)
@@ -40,6 +46,9 @@ class GuestAppointmentRequest(db.Model, EncryptionMixin):
     specialty = db.Column(db.String(100), nullable=False, index=True)
     clinician_id = db.Column(db.Integer, db.ForeignKey('clinician_profiles.id'), nullable=False)
     preferred_at = db.Column(db.DateTime, nullable=False)
+    appointment_type = db.Column(
+        db.String(20), nullable=False, default='in_person'
+    )
     _reason = db.Column('reason', db.Text)
     status = db.Column(db.String(20), nullable=False, default='new', index=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient_profiles.id'))

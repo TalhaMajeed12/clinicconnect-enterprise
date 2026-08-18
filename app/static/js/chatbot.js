@@ -89,6 +89,7 @@
     bookingToggle.addEventListener('click', openGuidedBooking);
     if (!bookingForm) return;
     const specialty = document.getElementById('guided-specialty');
+    const appointmentType = document.getElementById('guided-type');
     const date = document.getElementById('guided-date');
     const doctor = document.getElementById('guided-doctor');
     const slot = document.getElementById('guided-slot');
@@ -142,6 +143,7 @@
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
                 body: JSON.stringify({
                     specialty: specialty.value, clinician_id: doctor.value,
+                    appointment_type: appointmentType.value,
                     preferred_at: slot.value,
                     full_name: document.getElementById('guided-name').value,
                     date_of_birth: document.getElementById('guided-dob').value,

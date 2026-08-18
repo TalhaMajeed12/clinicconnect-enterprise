@@ -59,17 +59,18 @@
                     <a href="{{ url_for('clinician.appointments') }}" class="btn btn-warning">
                         <i class="fas fa-calendar-check"></i> View Appointments
                     </a>
-                    <button class="btn btn-info" onclick="toggleAttendance()">
-                        <i class="fas fa-clock"></i> <span id="attendance-status">
+                    <button id="attendance-toggle" class="btn btn-info" type="button" onclick="toggleAttendance()" aria-describedby="attendance-help">
+                        <i class="fas fa-user-clock"></i> <span id="attendance-status">
                             {% set att = clinician.attendance if clinician.attendance else None %}
                             {% if att and att.status == 'online' %}
-                                Online
+                                Present today
                             {% else %}
-                                Offline
+                                Mark present today
                             {% endif %}
                         </span>
                     </button>
                 </div>
+                <p id="attendance-help" class="form-text mt-3 mb-0">Daily attendance only. Appointment booking is controlled separately under Availability.</p>
             </div>
         </div>
     </div>
@@ -122,6 +123,8 @@
 
 <script>
 function toggleAttendance() {
+    const button = document.getElementById('attendance-toggle');
+    button.disabled = true;
     fetch('/clinician/toggle_attendance', {
         method: 'POST',
         headers: {
@@ -129,15 +132,23 @@ function toggleAttendance() {
             'X-CSRFToken': csrfToken
         }
     })
-    .then(response => response.json())
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to update attendance.');
+        return data;
+    })
     .then(data => {
         if (data.status) {
-            document.getElementById('attendance-status').textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+            document.getElementById('attendance-status').textContent = data.status === 'online'
+                ? 'Present today'
+                : 'Mark present today';
+            showFeedback(data.status === 'online'
+                ? 'Daily attendance marked as present.'
+                : 'Daily attendance marked as away.', 'success');
         }
     })
-    .catch(error => {
-        alert('Error toggling attendance');
-    });
+    .catch(error => showFeedback(error.message, 'danger'))
+    .finally(() => { button.disabled = false; });
 }
 </script>
 {% endblock %}

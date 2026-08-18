@@ -6,6 +6,12 @@ from app.extensions import db
 
 class Appointment(db.Model):
     __tablename__ = "appointments"
+    __table_args__ = (
+        db.CheckConstraint(
+            "appointment_type IN ('in_person', 'video')",
+            name='ck_appointments_type',
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(
@@ -20,6 +26,9 @@ class Appointment(db.Model):
     appointment_date = db.Column(db.DateTime, nullable=False)
     duration = db.Column(db.Integer, default=30)
     status = db.Column(db.String(20), default="pending")
+    appointment_type = db.Column(
+        db.String(20), nullable=False, default='in_person', index=True
+    )
 
     reason = db.Column(db.Text)
     symptoms = db.Column(db.Text)
@@ -49,12 +58,17 @@ class Appointment(db.Model):
 
     patient = db.relationship("PatientProfile", backref="appointments")
     clinician = db.relationship("ClinicianProfile", backref="appointments")
+    video_session = db.relationship(
+        'VideoConsultation', back_populates='appointment', uselist=False,
+        cascade='all, delete-orphan'
+    )
 
     def to_dict(self):
         return {
             "id": self.id,
             "appointment_date": self.appointment_date.isoformat(),
             "status": self.status,
+            "appointment_type": self.appointment_type,
             "reason": self.reason
         }
  

@@ -34,3 +34,6 @@ PostgreSQL
 - Redis is optional; when absent, the single-worker deployment uses filesystem sessions and in-memory rate limiting
 
 The application does not initialize tables or create administrators at startup. This prevents hidden writes and protects existing production data.
+# Integrated Video Consultation (2026 update)
+
+Video is an appointment capability, not a separate record silo. Flask verifies the authenticated user, appointment ownership, `video` type, permitted status, and centralized time window before rendering an unpredictable token room. The browser then performs a local `getUserMedia()` preflight and embeds Jitsi Meet. Jitsi supplies WebRTC signaling and NAT traversal; ClinicConnect stores only lifecycle timestamps and encrypted text messages, never audio/video. A regulated deployment should replace the public service with contracted or self-hosted infrastructure including TURN.

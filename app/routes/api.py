@@ -5,7 +5,10 @@ from app.utils.auth import token_required
 from datetime import datetime, timedelta
 import jwt
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from app.extensions import limiter
+from app.utils.appointment_slots import is_available_slot
+from app.utils.audit import record_audit
 
 api_bp = Blueprint('api', __name__)
 
@@ -176,21 +179,42 @@ def get_appointments(current_user):
 def create_appointment(current_user):
     if current_user.role != 'patient':
         return jsonify({'error': 'Only patients can book appointments'}), 403
-    data = request.get_json()
-    
+    data = request.get_json(silent=True) or {}
     patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
-    clinician = ClinicianProfile.query.get(data.get('clinician_id'))
-    
+    appointment_type = str(data.get('appointment_type', 'in_person')).strip()
+    if appointment_type not in {'in_person', 'video'}:
+        return jsonify({'error': 'Choose an in-person or video appointment'}), 400
+    try:
+        clinician_id = int(data.get('clinician_id'))
+        appointment_date = datetime.fromisoformat(str(data.get('appointment_date', '')))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Choose a valid clinician, date, and time'}), 400
+    clinician = (ClinicianProfile.query.filter_by(id=clinician_id)
+                 .with_for_update().first())
+    if not patient or not clinician or not clinician.user or not clinician.user.is_active:
+        return jsonify({'error': 'Clinician unavailable'}), 404
+    if appointment_date <= datetime.now() or not is_available_slot(clinician, appointment_date):
+        return jsonify({'error': 'That appointment slot is unavailable'}), 409
+
     appointment = Appointment(
         patient_id=patient.id,
         clinician_id=clinician.id,
-        appointment_date=datetime.fromisoformat(data.get('appointment_date')),
-        reason=data.get('reason'),
-        symptoms=data.get('symptoms'),
-        status='pending'
+        appointment_date=appointment_date,
+        duration=clinician.appointment_duration or 30,
+        appointment_type=appointment_type,
+        reason=str(data.get('reason', '')).strip()[:1000] or None,
+        symptoms=str(data.get('symptoms', '')).strip()[:2000] or None,
+        status='pending',
     )
     db.session.add(appointment)
-    db.session.commit()
+    db.session.flush()
+    record_audit('appointment_requested', 'appointment', appointment.id,
+                 {'clinician_id': clinician.id, 'channel': 'api'})
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'error': 'That appointment slot was just reserved'}), 409
     
     return jsonify({'success': True, 'appointment': appointment.to_dict()})
 

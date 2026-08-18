@@ -9,7 +9,7 @@ from .notification import Notification
 from .system import SystemSetting, Attendance
 from .time_off import ClinicianTimeOff
 from .password_reset import PasswordResetToken
-from .consultation import ConsultationMessage
+from .consultation import ConsultationMessage, VideoConsultation
 from .booking import DoctorReview, GuestAppointmentRequest
 
 __all__ = [
@@ -29,6 +29,7 @@ __all__ = [
     "ClinicianTimeOff",
     "PasswordResetToken",
     "ConsultationMessage",
+    "VideoConsultation",
     "DoctorReview",
     "GuestAppointmentRequest",
 ]

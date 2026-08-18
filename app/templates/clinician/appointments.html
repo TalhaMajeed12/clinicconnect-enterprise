@@ -10,13 +10,21 @@
         <div class="card-body">
             <!-- Filters -->
             <form method="GET" class="row mb-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <select name="status" class="form-control">
                         <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
                         <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
                         <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
                         <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
                         <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="appointment_type_filter" class="form-label">Show appointment type</label>
+                    <select id="appointment_type_filter" name="type" class="form-select">
+                        <option value="all" {% if type_filter == 'all' %}selected{% endif %}>All appointments</option>
+                        <option value="video" {% if type_filter == 'video' %}selected{% endif %}>Video only</option>
+                        <option value="in_person" {% if type_filter == 'in_person' %}selected{% endif %}>In-person only</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -36,6 +44,7 @@
                         <tr>
                             <th>Patient</th>
                             <th>Date & Time</th>
+                            <th>Type</th>
                             <th>Reason</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -47,6 +56,7 @@
                             <tr>
                                 <td>{{ appointment.patient.user.full_name if appointment.patient and appointment.patient.user else 'N/A' }}</td>
                                 <td>{{ appointment.appointment_date.strftime('%Y-%m-%d %H:%M') if appointment.appointment_date else 'N/A' }}</td>
+                                <td><span class="appointment-type-badge {{ 'is-video' if appointment.appointment_type == 'video' else 'is-in-person' }}">{{ 'Video consultation' if appointment.appointment_type == 'video' else 'In-person appointment' }}</span></td>
                                 <td>{{ appointment.reason or 'N/A' }}</td>
                                 <td>{{ status_badge(appointment.status) }}</td>
                                 <td>
@@ -61,9 +71,14 @@
                                     <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-info" title="View patient">
                                         <i class="fas fa-eye"></i><span class="visually-hidden">View patient</span>
                                     </a>
-                                    {% if appointment.status in ['confirmed', 'checked_in'] %}
-                                    <a href="{{ url_for('consultations.room', appointment_id=appointment.id) }}" class="btn btn-sm btn-primary" title="Open video consultation and secure messages">
-                                        <i class="fas fa-video"></i><span class="visually-hidden">Open consultation</span>
+                                    {% if appointment.status in ['confirmed', 'checked_in'] and not appointment.visits %}
+                                    <a href="{{ url_for('clinician.add_visit', patient_id=appointment.patient_id, appointment_id=appointment.id) }}" class="btn btn-sm btn-outline-primary" title="Record the visit and optional prescription">
+                                        <i class="fas fa-notes-medical"></i><span class="visually-hidden">Record visit</span>
+                                    </a>
+                                    {% endif %}
+                                    {% if appointment.appointment_type == 'video' and appointment.status in ['confirmed', 'checked_in'] %}
+                                    <a href="{{ url_for('consultations.token_room', room_token=appointment.video_room_token) }}" class="btn btn-sm btn-primary" title="Open video consultation and secure messages">
+                                        Open video consultation
                                     </a>
                                     {% endif %}
                                     </div>
@@ -71,7 +86,7 @@
                             </tr>
                             {% endfor %}
                         {% else %}
-                            <tr><td colspan="5">{{ empty_state('calendar-xmark', 'No appointments match these filters', 'Try clearing the status or date filter.') }}</td></tr>
+                            <tr><td colspan="6">{{ empty_state('calendar-xmark', 'No appointments match these filters', 'Try clearing the status or date filter.') }}</td></tr>
                         {% endif %}
                     </tbody>
                 </table>

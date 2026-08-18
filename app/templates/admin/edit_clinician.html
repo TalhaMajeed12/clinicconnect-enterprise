@@ -79,6 +79,12 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" role="switch" id="is_available" name="is_available" {% if clinician.is_available %}checked{% endif %}>
+                    <label class="form-check-label" for="is_available"><strong>Available for online booking</strong></label>
+                    <div class="form-text">Turn this off to keep the clinician record while hiding their slots from new bookings.</div>
+                </div>
                 
                 <button type="submit" class="btn btn-primary">Update Clinician</button>
                 <a href="{{ url_for('admin.clinicians') }}" class="btn btn-secondary">Cancel</a>

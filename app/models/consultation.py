@@ -4,6 +4,34 @@ from app.extensions import db
 from .mixins import EncryptionMixin
 
 
+class VideoConsultation(db.Model):
+    """Lifecycle metadata for one video appointment; media is never stored."""
+
+    __tablename__ = 'video_consultations'
+    __table_args__ = (
+        db.CheckConstraint(
+            "status IN ('scheduled', 'active', 'ended')",
+            name='ck_video_consultations_status',
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(
+        db.Integer, db.ForeignKey('appointments.id', ondelete='CASCADE'),
+        nullable=False, unique=True, index=True
+    )
+    status = db.Column(db.String(20), nullable=False, default='scheduled')
+    started_at = db.Column(db.DateTime)
+    ended_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    appointment = db.relationship('Appointment', back_populates='video_session')
+
+
 class ConsultationMessage(db.Model, EncryptionMixin):
     """Encrypted message belonging to exactly one booked consultation."""
 

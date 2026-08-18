@@ -6,7 +6,6 @@ from app.models import (User, PatientProfile, ClinicianProfile, Appointment, Pay
 from datetime import datetime, timedelta
 from uuid import uuid4
 from sqlalchemy import func
-import traceback
 from app.utils.patient_search import search_patients_by_fields
 from app.utils.appointment_slots import is_available_slot
 
@@ -67,6 +66,7 @@ def convert_intake_request(request_id):
         appointment_date=item.preferred_at,
         duration=clinician.appointment_duration or 30,
         status='pending', reason=item.reason,
+        appointment_type=item.appointment_type,
     )
     db.session.add(appointment)
     db.session.flush()
@@ -129,6 +129,8 @@ def dashboard():
         ).count()
         pending_requests = GuestAppointmentRequest.query.filter_by(status='new').count()
         cancelled_appointments = Appointment.query.filter_by(status='cancelled').count()
+        video_appointments = Appointment.query.filter_by(appointment_type='video').count()
+        in_person_appointments = Appointment.query.filter_by(appointment_type='in_person').count()
         clinicians_on_time_off = (db.session.query(ClinicianTimeOff.clinician_id)
                                   .filter(ClinicianTimeOff.status == 'approved',
                                           ClinicianTimeOff.start_date <= today,
@@ -149,10 +151,12 @@ def dashboard():
             pending_requests=pending_requests,
             cancelled_appointments=cancelled_appointments,
             clinicians_on_time_off=clinicians_on_time_off,
+            video_appointments=video_appointments,
+            in_person_appointments=in_person_appointments,
         )
 
-    except Exception as e:
-        print(f"Dashboard Error: {str(e)}")
+    except Exception:
+        current_app.logger.exception('Unable to load admin dashboard')
         return render_template('errors/500.html'), 500
 # ============================================
 # PATIENTS
@@ -176,8 +180,8 @@ def patients():
             search_filters=filters,
         )
 
-    except Exception as e:
-        print(f"Patients Error: {str(e)}")
+    except Exception:
+        current_app.logger.exception('Unable to load admin patients')
         flash('Error loading patients', 'danger')
         return render_template('errors/500.html'), 500
 
@@ -216,10 +220,13 @@ def appointments():
     if not is_admin():
         return redirect(url_for('auth.admin_login'))
     status = request.args.get('status', 'all').strip()
+    appointment_type = request.args.get('type', 'all').strip()
     date_value = request.args.get('date', '').strip()
     query = Appointment.query
     if status != 'all':
         query = query.filter_by(status=status)
+    if appointment_type in {'in_person', 'video'}:
+        query = query.filter_by(appointment_type=appointment_type)
     if date_value:
         try:
             query = query.filter(func.date(Appointment.appointment_date) == datetime.strptime(date_value, '%Y-%m-%d').date())
@@ -227,7 +234,8 @@ def appointments():
             flash('Choose a valid appointment date.', 'warning')
     records = query.order_by(Appointment.appointment_date.desc()).all()
     return render_template('admin/appointments.html', appointments=records,
-                           status_filter=status, date_filter=date_value)
+                           status_filter=status, type_filter=appointment_type,
+                           date_filter=date_value)
 # ============================================
 # VIEW CLINICIAN
 # ============================================
@@ -244,8 +252,8 @@ def view_clinician(clinician_id):
             clinician=clinician
         )
 
-    except Exception as e:
-        print(f"View Clinician Error: {str(e)}")
+    except Exception:
+        current_app.logger.exception('Unable to load clinician details')
         flash('Error loading clinician details', 'danger')
         return redirect(url_for('admin.clinicians'))
 # ============================================
@@ -264,10 +272,9 @@ def view_patient(patient_id):
             patient=patient
         )
 
-    except Exception as e:
-        print(f"View Patient Error: {str(e)}")
-        print(traceback.format_exc())
-        flash(f'Error loading patient details: {str(e)}', 'danger')
+    except Exception:
+        current_app.logger.exception('Unable to load patient details')
+        flash('Unable to load patient details.', 'danger')
         return redirect(url_for('admin.patients'))
 # ============================================
 # ADD CLINICIAN
@@ -402,7 +409,8 @@ def add_clinician():
                 specialty=specialty,
                 license_number=license_number,
                 years_experience=years_experience,
-                consultation_fee=consultation_fee
+                consultation_fee=consultation_fee,
+                is_available=request.form.get('is_available') == 'on',
             )
 
             db.session.add(clinician)
@@ -418,11 +426,9 @@ def add_clinician():
 
             return redirect(url_for('admin.clinicians'))
 
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-
-            print(f"Add Clinician Error: {str(e)}")
-            print(traceback.format_exc())
+            current_app.logger.exception('Unable to add clinician')
 
             flash(
                 'Unable to add clinician. Please check the information.',
@@ -464,6 +470,7 @@ def edit_clinician(clinician_id):
             clinician.consultation_fee = float(
                 request.form.get('consultation_fee', 2000)
             )
+            clinician.is_available = request.form.get('is_available') == 'on'
 
             if clinician.user:
                 clinician.user.full_name = request.form.get('full_name')
@@ -533,6 +540,7 @@ def audit_logs():
         scope = request.args.get('scope', 'active')
         action = request.args.get('action', '').strip()
         role = request.args.get('role', '').strip()
+        user_filter = request.args.get('user', '').strip()
         resource_type = request.args.get('resource_type', '').strip()
         date_from = request.args.get('date_from', '').strip()
         date_to = request.args.get('date_to', '').strip()
@@ -544,6 +552,17 @@ def audit_logs():
             query = query.filter(AuditLog.archived_at.is_(None))
         if action:
             query = query.filter(AuditLog.action.ilike(f'%{action}%'))
+        if user_filter:
+            matching_users = db.session.query(User.id).filter(
+                User.username.ilike(f'%{user_filter}%')
+            )
+            if user_filter.isdigit():
+                query = query.filter(
+                    (AuditLog.user_id == int(user_filter))
+                    | AuditLog.user_id.in_(matching_users)
+                )
+            else:
+                query = query.filter(AuditLog.user_id.in_(matching_users))
         if role in {'admin', 'clinician', 'patient'}:
             query = query.join(User, AuditLog.user_id == User.id).filter(User.role == role)
         elif role:
@@ -569,7 +588,8 @@ def audit_logs():
         return render_template(
             'admin/audit_logs.html',
             logs=logs,
-            filters={'scope': scope, 'action': action, 'role': role, 'resource_type': resource_type,
+            filters={'scope': scope, 'action': action, 'user': user_filter,
+                     'role': role, 'resource_type': resource_type,
                      'date_from': date_from, 'date_to': date_to},
             resource_types=[row[0] for row in db.session.query(AuditLog.resource_type)
                             .filter(AuditLog.resource_type.isnot(None)).distinct().order_by(AuditLog.resource_type)],

@@ -5,7 +5,7 @@
   <div>
     <span class="eyebrow">Private appointment space</span>
     <h1 class="h2 mb-1"><i class="fas fa-video me-2"></i>Video consultation</h1>
-    <p class="text-muted mb-0">{{ appointment.appointment_date.strftime('%d %b %Y, %I:%M %p') }} · Appointment #{{ appointment.id }}</p>
+    <p class="text-muted mb-0">{{ appointment.appointment_date.strftime('%d %b %Y, %I:%M %p') }} · Video consultation · {{ appointment.duration or 30 }} minutes</p>
   </div>
   <a class="btn btn-outline-secondary" href="{{ url_for('patient.appointments') if current_user.role == 'patient' else url_for('clinician.appointments') }}">Back to appointments</a>
 </div>
@@ -14,12 +14,29 @@
 
 <div class="row g-4 consultation-layout">
   <section class="col-lg-8" aria-label="Video consultation">
-    {% if appointment.status == 'confirmed' %}
-      <div class="video-consultation-frame">
-        <iframe src="{{ video_url }}" title="ClinicConnect video consultation" allow="camera; microphone; fullscreen; display-capture" referrerpolicy="no-referrer" loading="eager"></iframe>
+    {% if join_state.allowed %}
+      <div id="video-preflight" class="card consultation-preflight">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+            <div><span class="eyebrow">Device check</span><h2 class="h4 mb-1">Ready to join?</h2><p class="text-muted mb-0">Preview your camera and microphone before opening the encrypted Jitsi call.</p></div>
+            <span id="connection-status" class="status-badge status-confirmed" role="status"><span></span>Waiting for device check</span>
+          </div>
+          <video id="local-preview" class="consultation-local-preview" autoplay muted playsinline aria-label="Local camera preview"></video>
+          <div class="consultation-controls mt-3" role="group" aria-label="Video consultation controls">
+            <button id="check-devices" class="btn btn-outline-primary" type="button"><i class="fas fa-camera me-2"></i>Check camera and microphone</button>
+            <button id="toggle-microphone" class="btn btn-outline-secondary" type="button" disabled aria-pressed="true"><i class="fas fa-microphone me-2"></i>Microphone on</button>
+            <button id="toggle-camera" class="btn btn-outline-secondary" type="button" disabled aria-pressed="true"><i class="fas fa-video me-2"></i>Camera on</button>
+            <button id="enter-call" class="btn btn-primary" type="button"><i class="fas fa-right-to-bracket me-2"></i>Enter secure call</button>
+            <a class="btn btn-outline-danger" href="{{ url_for('patient.appointments') if current_user.role == 'patient' else url_for('clinician.appointments') }}"><i class="fas fa-phone-slash me-2"></i>Leave</a>
+          </div>
+          <p id="device-error" class="text-danger small mt-3 mb-0" role="alert" hidden></p>
+        </div>
+      </div>
+      <div id="video-call-frame" class="video-consultation-frame" hidden>
+        <iframe data-src="{{ video_url }}" title="ClinicConnect video consultation" allow="camera; microphone; fullscreen; display-capture" allowfullscreen referrerpolicy="no-referrer"></iframe>
       </div>
     {% else %}
-      <div class="card p-5 text-center"><i class="fas fa-video-slash fa-3x text-muted mb-3"></i><h2 class="h4">Video room unavailable</h2><p class="text-muted mb-0">The appointment must be confirmed before its video room opens. Secure messaging remains available unless the appointment is cancelled.</p></div>
+      <div class="card p-5 text-center"><i class="fas fa-video-slash fa-3x text-muted mb-3"></i><h2 class="h4">Video room unavailable</h2><p class="text-muted mb-0">{{ join_state.message }} Secure messaging remains available unless the appointment is cancelled.</p></div>
     {% endif %}
   </section>
   <aside class="col-lg-4">
@@ -43,4 +60,62 @@
     </div>
   </aside>
 </div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+{% if join_state.allowed %}
+<script>
+(() => {
+  const preview = document.getElementById('local-preview');
+  const check = document.getElementById('check-devices');
+  const microphone = document.getElementById('toggle-microphone');
+  const camera = document.getElementById('toggle-camera');
+  const enter = document.getElementById('enter-call');
+  const error = document.getElementById('device-error');
+  const status = document.getElementById('connection-status');
+  const preflight = document.getElementById('video-preflight');
+  const frame = document.getElementById('video-call-frame');
+  const iframe = frame?.querySelector('iframe');
+  let stream;
+
+  const stopPreview = () => {
+    stream?.getTracks().forEach(track => track.stop());
+    stream = null;
+    if (preview) preview.srcObject = null;
+  };
+  const explainMediaError = mediaError => {
+    if (mediaError?.name === 'NotAllowedError') return 'Camera or microphone permission was denied. Allow access in your browser settings, then try again.';
+    if (mediaError?.name === 'NotFoundError') return 'No usable camera or microphone was found. Connect a device or continue using Jitsi audio-only options.';
+    if (mediaError?.name === 'NotReadableError') return 'A camera or microphone is already in use by another application. Close it and retry.';
+    return 'ClinicConnect could not check your devices. You may retry or enter the call and use Jitsi device settings.';
+  };
+  check?.addEventListener('click', async () => {
+    error.hidden = true; stopPreview(); status.lastChild.textContent = ' Requesting permission…';
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+      preview.srcObject = stream; microphone.disabled = false; camera.disabled = false;
+      status.lastChild.textContent = ' Devices ready';
+    } catch (mediaError) {
+      error.textContent = explainMediaError(mediaError); error.hidden = false;
+      status.lastChild.textContent = ' Device check needs attention';
+    }
+  });
+  microphone?.addEventListener('click', () => {
+    const track = stream?.getAudioTracks()[0]; if (!track) return;
+    track.enabled = !track.enabled; microphone.setAttribute('aria-pressed', String(track.enabled));
+    microphone.innerHTML = `<i class="fas fa-microphone${track.enabled ? '' : '-slash'} me-2"></i>Microphone ${track.enabled ? 'on' : 'off'}`;
+  });
+  camera?.addEventListener('click', () => {
+    const track = stream?.getVideoTracks()[0]; if (!track) return;
+    track.enabled = !track.enabled; camera.setAttribute('aria-pressed', String(track.enabled));
+    camera.innerHTML = `<i class="fas fa-video${track.enabled ? '' : '-slash'} me-2"></i>Camera ${track.enabled ? 'on' : 'off'}`;
+  });
+  enter?.addEventListener('click', () => {
+    stopPreview(); iframe.src = iframe.dataset.src; preflight.hidden = true; frame.hidden = false;
+    iframe.addEventListener('load', () => { status.lastChild.textContent = ' Call interface loaded'; }, {once: true});
+  });
+  window.addEventListener('pagehide', stopPreview);
+})();
+</script>
+{% endif %}
 {% endblock %}

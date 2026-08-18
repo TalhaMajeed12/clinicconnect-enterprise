@@ -9,7 +9,8 @@ from app import create_app
 from app.extensions import db
 from app.models import (Appointment, AuditLog, ClinicianProfile, ClinicianTimeOff,
                         ConsultationMessage, DoctorReview, GuestAppointmentRequest,
-                        PasswordResetToken, PatientProfile, User)
+                        PasswordResetToken, PatientProfile, Prescription, User,
+                        VideoConsultation, Visit)
 
 
 class CoreFlowTests(unittest.TestCase):
@@ -158,13 +159,14 @@ class CoreFlowTests(unittest.TestCase):
     def test_consultation_is_limited_to_assigned_patient_and_clinician(self):
         appointment = Appointment(
             patient_id=self.patient.id, clinician_id=self.clinician.id,
-            appointment_date=datetime.utcnow() + timedelta(days=1), status='confirmed'
+            appointment_date=datetime.now() + timedelta(minutes=5), status='confirmed',
+            appointment_type='video',
         )
         db.session.add(appointment)
         db.session.commit()
 
         self._session_as(self.patient_user)
-        page = self.client.get(f'/consultations/{appointment.id}')
+        page = self.client.get(f'/consultations/{appointment.id}', follow_redirects=True)
         self.assertEqual(page.status_code, 200)
         self.assertIn(b'Video consultation', page.data)
         sent = self.client.post(
@@ -177,7 +179,7 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(message.body, 'Please bring the previous report.')
 
         self._session_as(self.clinician_user)
-        clinician_page = self.client.get(f'/consultations/{appointment.id}')
+        clinician_page = self.client.get(f'/consultations/{appointment.id}', follow_redirects=True)
         self.assertIn(b'Please bring the previous report.', clinician_page.data)
 
         other_user = self._user('outsider', 'patient', 'outsider@example.test', '4500')
@@ -206,8 +208,10 @@ class CoreFlowTests(unittest.TestCase):
             'email': 'guest@example.test', 'date_of_birth': '1995-04-12',
             'specialty': 'General Medicine', 'clinician_id': self.clinician.id,
             'preferred_at': doctor['slots'][0]['value'], 'reason': 'Routine consultation',
+            'appointment_type': 'video',
         })
         self.assertEqual(response.status_code, 201)
+        self.assertEqual(GuestAppointmentRequest.query.one().appointment_type, 'video')
         item = GuestAppointmentRequest.query.one()
         self.assertEqual(item.full_name, 'Guest Patient')
         self.assertNotIn('Guest Patient', item._full_name)
@@ -297,6 +301,11 @@ class CoreFlowTests(unittest.TestCase):
             status='confirmed',
         )
         db.session.add(appointment)
+        db.session.flush()
+        db.session.add(Visit(
+            patient_id=self.patient.id, clinician_id=self.clinician.id,
+            appointment_id=appointment.id, primary_diagnosis='Routine review',
+        ))
         db.session.commit()
         self._session_as(self.clinician_user)
         self.app.config['WTF_CSRF_ENABLED'] = True
@@ -344,7 +353,7 @@ class CoreFlowTests(unittest.TestCase):
 
     def test_security_headers_are_present(self):
         response = self.client.get('/')
-        self.assertIn(b'images/favicon.svg', response.data)
+        self.assertIn(b'images/favicon-3d-v2.png', response.data)
         self.assertIn(b'id="main-content"', response.data)
         self.assertIn("default-src 'self'", response.headers['Content-Security-Policy'])
         self.assertEqual(
@@ -523,6 +532,94 @@ class CoreFlowTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 409)
         self.assertEqual(db.session.get(Appointment, appointment.id).status, 'completed')
+
+    def test_video_room_enforces_type_status_window_and_object_access(self):
+        now = datetime.now()
+        in_person = Appointment(
+            patient_id=self.patient.id, clinician_id=self.clinician.id,
+            appointment_date=now + timedelta(minutes=5), status='confirmed',
+            appointment_type='in_person',
+        )
+        early = Appointment(
+            patient_id=self.patient.id, clinician_id=self.clinician.id,
+            appointment_date=now + timedelta(hours=2), status='confirmed',
+            appointment_type='video',
+        )
+        expired = Appointment(
+            patient_id=self.patient.id, clinician_id=self.clinician.id,
+            appointment_date=now - timedelta(hours=2), status='confirmed',
+            appointment_type='video', duration=30,
+        )
+        db.session.add_all([in_person, early, expired])
+        db.session.commit()
+        self._session_as(self.patient_user)
+
+        non_video = self.client.get(f'/consultations/{in_person.id}')
+        self.assertEqual(non_video.status_code, 302)
+        too_early = self.client.get(f'/consultations/room/{early.video_room_token}')
+        self.assertIn(b'15 minutes before', too_early.data)
+        self.assertNotIn(b'<iframe', too_early.data)
+        too_late = self.client.get(f'/consultations/room/{expired.video_room_token}')
+        self.assertIn(b'joining window for this video consultation has ended', too_late.data)
+        self.assertNotIn(b'<iframe', too_late.data)
+
+        outsider_user = self._user(
+            'other-doctor', 'clinician', 'other-doctor@example.test', '8877'
+        )
+        outsider = ClinicianProfile(user_id=outsider_user.id, specialty='Cardiology')
+        db.session.add(outsider)
+        db.session.commit()
+        self._session_as(outsider_user)
+        self.assertEqual(
+            self.client.get(f'/consultations/room/{early.video_room_token}').status_code,
+            403,
+        )
+
+    def test_video_visit_prescription_and_completion_form_one_history_chain(self):
+        appointment = Appointment(
+            patient_id=self.patient.id, clinician_id=self.clinician.id,
+            appointment_date=datetime.now() + timedelta(minutes=5),
+            status='confirmed', appointment_type='video',
+        )
+        db.session.add(appointment)
+        db.session.commit()
+        self._session_as(self.clinician_user)
+
+        joined = self.client.get(
+            f'/consultations/room/{appointment.video_room_token}'
+        )
+        self.assertEqual(joined.status_code, 200)
+        self.assertEqual(appointment.video_session.status, 'active')
+
+        recorded = self.client.post(
+            f'/clinician/add_visit/{self.patient.id}',
+            data={
+                'appointment_id': appointment.id,
+                'chief_complaint': 'Follow-up',
+                'primary_diagnosis': 'Stable condition',
+                'treatment_plan': 'Continue treatment',
+                'medication': 'Test Medicine',
+                'dosage': '5 mg', 'frequency': 'Once daily', 'duration': '7 days',
+            },
+        )
+        self.assertEqual(recorded.status_code, 302)
+        visit = Visit.query.filter_by(appointment_id=appointment.id).one()
+        self.assertEqual(visit.visit_type, 'Video Consultation')
+        self.assertEqual(Prescription.query.filter_by(visit_id=visit.id).count(), 1)
+
+        completed = self.client.post(
+            f'/clinician/appointment/{appointment.id}/update',
+            json={'status': 'completed'},
+        )
+        self.assertEqual(completed.status_code, 200)
+        self.assertEqual(appointment.status, 'completed')
+        self.assertEqual(appointment.video_session.status, 'ended')
+        self.assertIsNotNone(appointment.video_session.ended_at)
+
+        self._session_as(self.patient_user)
+        history = self.client.get('/patient/history')
+        self.assertIn(b'Video Consultation', history.data)
+        self.assertIn(b'Test Medicine', history.data)
 
     def test_clinical_chatbot_is_public_bilingual_and_escalates_emergencies(self):
         unauthenticated = self.client.post(

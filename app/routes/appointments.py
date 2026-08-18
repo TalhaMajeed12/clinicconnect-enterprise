@@ -8,6 +8,7 @@ from app.utils.translations import t
 from datetime import datetime, timedelta
 from secrets import token_hex
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from app.utils.appointment_slots import available_slots, is_available_slot
 from app.utils.audit import record_audit
 
@@ -21,6 +22,18 @@ def _active_clinicians(specialty=None):
     if specialty:
         query = query.filter(func.lower(ClinicianProfile.specialty) == specialty.casefold())
     return query.order_by(ClinicianProfile.average_rating.desc(), User.username.asc()).all()
+
+
+def _directory_clinicians(specialty=None):
+    """Active clinician accounts, including profiles awaiting booking setup."""
+    query = (ClinicianProfile.query.join(User, ClinicianProfile.user_id == User.id)
+             .filter(User.is_active.is_(True), User.role == 'clinician'))
+    if specialty:
+        query = query.filter(func.lower(ClinicianProfile.specialty) == specialty.casefold())
+    return query.order_by(
+        ClinicianProfile.is_available.desc(),
+        ClinicianProfile.average_rating.desc(), User.username.asc()
+    ).all()
 
 
 def _next_slots(clinician, start_date, days=14, limit=5):
@@ -40,6 +53,10 @@ def book():
         return redirect(url_for('auth.login'))
     
     if request.method == 'POST':
+        appointment_type = request.form.get('appointment_type', 'in_person')
+        if appointment_type not in {'in_person', 'video'}:
+            flash(t('Choose a valid appointment type.'), 'danger')
+            return redirect(url_for('appointments.book'))
         try:
             clinician_id = int(request.form.get('clinician_id', ''))
             appointment_date = datetime.strptime(
@@ -73,21 +90,27 @@ def book():
             reason=request.form.get('reason'),
             symptoms=request.form.get('symptoms'),
             status='pending',
-            duration=duration
+            duration=duration,
+            appointment_type=appointment_type,
         )
         db.session.add(appointment)
         db.session.flush()
         record_audit('appointment_requested', 'appointment', appointment.id,
                      {'clinician_id': clinician.id})
-        db.session.commit()
-        
-        flash(t('Appointment booked! Please complete payment.'), 'success')
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash(t('That time was just reserved by another patient. Choose another slot.'), 'warning')
+            return redirect(url_for('appointments.book'))
+
+        flash(t('Appointment requested. Complete the demo deposit to confirm it.'), 'success')
         return redirect(url_for('payment.checkout', appointment_id=appointment.id))
     
-    clinicians = _active_clinicians(request.args.get('specialty', '').strip())
+    clinicians = _directory_clinicians(request.args.get('specialty', '').strip())
     specialties = [row[0] for row in db.session.query(ClinicianProfile.specialty)
-                    .join(User).filter(ClinicianProfile.is_available.is_(True),
-                                       User.is_active.is_(True)).distinct().order_by(ClinicianProfile.specialty)]
+                    .join(User).filter(User.is_active.is_(True),
+                                       User.role == 'clinician').distinct().order_by(ClinicianProfile.specialty)]
     return render_template('patient/book_appointment.html', clinicians=clinicians,
                            specialties=specialties,
                            selected_specialty=request.args.get('specialty', '').strip())
@@ -155,6 +178,9 @@ def guest_request():
     if session.get('user_id'):
         return jsonify({'error': 'Please use your patient portal to book.'}), 400
     data = request.get_json(silent=True) or {}
+    appointment_type = str(data.get('appointment_type', 'in_person')).strip()
+    if appointment_type not in {'in_person', 'video'}:
+        return jsonify({'error': 'Choose an in-person or video appointment.'}), 400
     required = ('full_name', 'phone', 'date_of_birth', 'specialty', 'clinician_id', 'preferred_at')
     if any(not str(data.get(key, '')).strip() for key in required):
         return jsonify({'error': 'Complete all required booking details.'}), 400
@@ -171,7 +197,8 @@ def guest_request():
     item = GuestAppointmentRequest(
         reference=f'CCR-{token_hex(4).upper()}', date_of_birth=dob,
         specialty=clinician.specialty, clinician_id=clinician.id,
-        preferred_at=preferred_at, status='new'
+        preferred_at=preferred_at, status='new',
+        appointment_type=appointment_type
     )
     item.full_name = str(data['full_name']).strip()[:150]
     item.phone = str(data['phone']).strip()[:40]

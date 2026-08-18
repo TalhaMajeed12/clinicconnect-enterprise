@@ -44,3 +44,6 @@ Never run destructive fixtures or database initialization against production.
 # Slot booking and FAQ assistant
 
 Automated coverage verifies that occupied appointment times are removed from the slot API, valid configured times remain selectable, the public assistant answers newcomer FAQs, Urdu intent handling works, and emergency messages are escalated.
+# Video and longitudinal-flow coverage
+
+The core suite verifies assigned patient/clinician room access, unrelated-user rejection, in-person rejection, early and expired windows, encrypted messaging, lifecycle activation/end, linked visit/prescription creation, completion, and patient-history visibility. Run the complete suite after every schema or authorization change.

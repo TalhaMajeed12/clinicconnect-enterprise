@@ -44,3 +44,6 @@ Reviewed additive SQL migrations are stored in `migrations/`:
 Back up PostgreSQL and verify the target before applying migrations. Never reset production or delete EHR data to resolve schema drift.
 
 `audit_logs.archived_at` and `audit_logs.archive_batch_id` provide a non-destructive activity lifecycle. Active and archived records remain in PostgreSQL and are available through admin filters; no clinical record is purged by this workflow.
+# Video lifecycle additions
+
+Migration `006_add_video_appointment_lifecycle.sql` adds `appointment_type` to appointments and guest requests, a one-to-one `video_consultations` lifecycle table, an active exact-slot uniqueness guard, and a one-visit-per-appointment guard. Existing records are backfilled additively; no rows are deleted. Apply only after a verified backup and resolve any legacy duplicate active slots/visits deliberately if the protective indexes report a conflict.

@@ -3,7 +3,7 @@
 {% block content %}
 <header class="page-heading"><div class="eyebrow">Appointment scheduling</div><h1 class="h2 mb-1">Request an appointment</h1><p class="text-muted mb-0">Choose only validated availability, review the request, then continue to the deposit step. The appointment becomes confirmed only after successful payment.</p></header>
 <ol class="booking-progress" aria-label="Booking steps"><li class="active"><span>1</span>Specialty</li><li class="active"><span>2</span>Clinician</li><li><span>3</span>Date and time</li><li><span>4</span>Review</li></ol>
-<form method="GET" class="card card-body mb-3"><div class="row g-2 align-items-end"><div class="col-md-9"><label class="form-label" for="specialty_filter">Doctor category / specialty</label><select class="form-select" id="specialty_filter" name="specialty"><option value="">All specialties</option>{% for specialty in specialties %}<option value="{{ specialty }}" {% if specialty == selected_specialty %}selected{% endif %}>{{ specialty }}</option>{% endfor %}</select></div><div class="col-md-3"><button class="btn btn-outline-primary w-100">Show doctors</button></div></div></form>
+<form id="specialty_filter_form" method="GET" class="card card-body mb-3"><label class="form-label" for="specialty_filter">Doctor category / specialty</label><select class="form-select" id="specialty_filter" name="specialty" aria-label="Filter clinicians by specialty"><option value="">All specialties</option>{% for specialty in specialties %}<option value="{{ specialty }}" {% if specialty == selected_specialty %}selected{% endif %}>{{ specialty }}</option>{% endfor %}</select><div class="form-text">The clinician list updates automatically when you select a specialty.</div></form>
 {% if clinicians %}
 <form id="booking_form" method="POST" class="card card-body shadow-sm">
     <div class="mb-3">
@@ -11,10 +11,18 @@
         <select id="clinician_id" name="clinician_id" class="form-select" required>
             <option value="">Choose a clinician</option>
             {% for clinician in clinicians %}
-            <option value="{{ clinician.id }}">Dr. {{ clinician.user.full_name }} — {{ clinician.specialty }} — {{ '%.1f'|format(clinician.average_rating or 0) }}★ / {{ clinician.total_reviews or 0 }} reviews (PKR {{ clinician.consultation_fee }})</option>
+            <option value="{{ clinician.id }}" {% if not clinician.is_available %}disabled{% endif %}>Dr. {{ clinician.user.full_name }} — {{ clinician.specialty }} — {% if clinician.is_available %}{{ '%.1f'|format(clinician.average_rating or 0) }}★ / {{ clinician.total_reviews or 0 }} reviews (PKR {{ clinician.consultation_fee }}){% else %}availability setup required{% endif %}</option>
             {% endfor %}
         </select>
+        {% if clinicians|selectattr('is_available', 'equalto', false)|list %}<div class="form-text">Clinicians marked “availability setup required” are saved in the system but cannot accept online appointments yet.</div>{% endif %}
     </div>
+    <fieldset class="mb-3">
+        <legend class="form-label">Appointment type</legend>
+        <div class="appointment-type-options">
+            <label><input class="form-check-input" type="radio" name="appointment_type" value="in_person" checked><span><i class="fas fa-clinic-medical"></i><strong>In-person</strong><small>Attend the clinic at the selected time.</small></span></label>
+            <label><input class="form-check-input" type="radio" name="appointment_type" value="video"><span><i class="fas fa-video"></i><strong>Video consultation</strong><small>Join the secure online room around the appointment time.</small></span></label>
+        </div>
+    </fieldset>
     <div class="row g-3 mb-3">
         <div class="col-md-5">
             <label for="slot_date" class="form-label">Appointment date</label>
@@ -30,7 +38,7 @@
     </div>
     <div class="mb-3"><label for="reason" class="form-label">Reason</label><textarea id="reason" name="reason" class="form-control" rows="2" required></textarea></div>
     <div class="mb-3"><label for="symptoms" class="form-label">Symptoms (optional)</label><textarea id="symptoms" name="symptoms" class="form-control" rows="2"></textarea></div>
-    <div id="booking_review" class="booking-review mb-3" hidden><strong>Review your request</strong><dl class="row mb-0 mt-2"><dt class="col-sm-3">Clinician</dt><dd id="review_clinician" class="col-sm-9"></dd><dt class="col-sm-3">Date and time</dt><dd id="review_slot" class="col-sm-9"></dd><dt class="col-sm-3">Expected status</dt><dd class="col-sm-9">Pending until the deposit is completed</dd></dl></div>
+    <div id="booking_review" class="booking-review mb-3" hidden><strong>Review your request</strong><dl class="row mb-0 mt-2"><dt class="col-sm-3">Clinician</dt><dd id="review_clinician" class="col-sm-9"></dd><dt class="col-sm-3">Type</dt><dd id="review_type" class="col-sm-9"></dd><dt class="col-sm-3">Date and time</dt><dd id="review_slot" class="col-sm-9"></dd><dt class="col-sm-3">Expected status</dt><dd class="col-sm-9">Pending until the deposit is completed</dd></dl></div>
     <button class="btn btn-primary" type="submit">Review and continue to payment</button>
 </form>
 {% else %}
@@ -41,6 +49,8 @@
 {{ super() }}
 <script>
 (() => {
+  const specialtyFilter = document.getElementById('specialty_filter');
+  specialtyFilter?.addEventListener('change', () => document.getElementById('specialty_filter_form').submit());
   const clinician = document.getElementById('clinician_id');
   const date = document.getElementById('slot_date');
   const selected = document.getElementById('appointment_date');
@@ -73,6 +83,7 @@
           list.querySelectorAll('button').forEach(item => item.className = 'btn btn-outline-primary');
           button.className = 'btn btn-primary'; selected.value = slot.value;
           document.getElementById('review_clinician').textContent = clinician.options[clinician.selectedIndex].text;
+          document.getElementById('review_type').textContent = document.querySelector('input[name="appointment_type"]:checked').value === 'video' ? 'Video consultation' : 'In-person';
           document.getElementById('review_slot').textContent = `${date.value} at ${slot.label}`;
           document.getElementById('booking_review').hidden = false;
         });

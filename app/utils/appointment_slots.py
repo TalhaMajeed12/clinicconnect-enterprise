@@ -3,7 +3,7 @@ from datetime import datetime, time, timedelta
 from app.models import Appointment, ClinicianTimeOff
 
 
-BLOCKING_STATUSES = ('cancelled', 'completed', 'no_show')
+ACTIVE_SLOT_STATUSES = ('pending', 'confirmed', 'checked_in')
 
 
 def available_slots(clinician, target_date, now=None):
@@ -25,7 +25,7 @@ def available_slots(clinician, target_date, now=None):
         Appointment.clinician_id == clinician.id,
         Appointment.appointment_date >= day_start,
         Appointment.appointment_date < day_start + timedelta(days=1),
-        Appointment.status.notin_(BLOCKING_STATUSES),
+        Appointment.status.in_(ACTIVE_SLOT_STATUSES),
     ).all()
     if len(appointments) >= int(clinician.max_patients_per_day or 30):
         return []

@@ -14,6 +14,7 @@
   <p class="text-muted">Archiving reduces the active list without deleting any record. Archived activity remains searchable here.</p>
   <form method="get" class="card card-body mb-3"><div class="row g-2">
     <div class="col-md-2"><select name="scope" class="form-select"><option value="active" {{ 'selected' if filters.scope == 'active' }}>Active</option><option value="archived" {{ 'selected' if filters.scope == 'archived' }}>Archived</option><option value="all" {{ 'selected' if filters.scope == 'all' }}>All</option></select></div>
+    <div class="col-md-2"><input name="user" value="{{ filters.user }}" class="form-control" placeholder="User ID or username" aria-label="Filter by user"></div>
     <div class="col-md-2"><input name="action" value="{{ filters.action }}" class="form-control" placeholder="Action" aria-label="Filter by action"></div>
     <div class="col-md-2"><select name="role" class="form-select" aria-label="Filter by role"><option value="">All roles</option>{% for role in ['admin', 'clinician', 'patient'] %}<option value="{{ role }}" {{ 'selected' if filters.role == role }}>{{ role|title }}</option>{% endfor %}</select></div>
     <div class="col-md-2"><select name="resource_type" class="form-select"><option value="">All resources</option>{% for item in resource_types %}<option value="{{ item }}" {{ 'selected' if filters.resource_type == item }}>{{ item }}</option>{% endfor %}</select></div>
@@ -26,7 +27,7 @@
       <tbody>{% for log in logs.items %}<tr><td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'N/A' }}</td><td>{{ log.user.full_name if log.user else 'System' }}</td><td>{{ log.user.role|title if log.user else 'System' }}</td><td>{{ log.action }}</td><td>{{ log.resource_type or 'N/A' }}</td><td><small>{{ log.details or 'N/A' }}</small></td><td>{% if log.archived_at %}<span class="badge bg-secondary">Archived</span>{% else %}<span class="badge bg-success">Active</span>{% endif %}</td></tr>{% else %}<tr><td colspan="7" class="text-center text-muted py-4">No matching activity records.</td></tr>{% endfor %}</tbody>
     </table>
   </div>
-  {% if logs.pages > 1 %}<nav><ul class="pagination mb-0">{% for page_num in logs.iter_pages() %}{% if page_num %}<li class="page-item {{ 'active' if page_num == logs.page }}"><a class="page-link" href="{{ url_for('admin.audit_logs', page=page_num, scope=filters.scope, action=filters.action, role=filters.role, resource_type=filters.resource_type, date_from=filters.date_from, date_to=filters.date_to) }}">{{ page_num }}</a></li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}{% endfor %}</ul></nav>{% endif %}
+  {% if logs.pages > 1 %}<nav><ul class="pagination mb-0">{% for page_num in logs.iter_pages() %}{% if page_num %}<li class="page-item {{ 'active' if page_num == logs.page }}"><a class="page-link" href="{{ url_for('admin.audit_logs', page=page_num, scope=filters.scope, user=filters.user, action=filters.action, role=filters.role, resource_type=filters.resource_type, date_from=filters.date_from, date_to=filters.date_to) }}">{{ page_num }}</a></li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}{% endfor %}</ul></nav>{% endif %}
   </div></div>
 </div>
 {% endblock %}
