@@ -1,12 +1,3 @@
-/* ClinicConnect's lightweight Bootstrap theme. */
-:root {
-    --cc-primary: #0d6efd;
-    --cc-surface: #ffffff;
-    --cc-background: #f5f7fb;
-    --cc-border: #dee2e6;
-    --cc-text-muted: #64748b;
-}
-
 /* 2026 wellness-inspired application theme */
 :root {
     --cc-primary: #126e6a;
@@ -25,6 +16,22 @@
 }
 
 body { color: var(--cc-navy); }
+a { color: var(--cc-primary); }
+a:hover, a:focus { color: var(--cc-primary-dark); }
+.text-primary, .link-primary { color: var(--cc-primary) !important; }
+.btn-outline-primary {
+    --bs-btn-color: var(--cc-primary);
+    --bs-btn-border-color: var(--cc-primary);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--cc-primary);
+    --bs-btn-hover-border-color: var(--cc-primary);
+    --bs-btn-focus-shadow-rgb: 18, 110, 106;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--cc-primary-dark);
+    --bs-btn-active-border-color: var(--cc-primary-dark);
+    --bs-btn-disabled-color: var(--cc-primary);
+    --bs-btn-disabled-border-color: var(--cc-primary);
+}
 html { scroll-behavior: smooth; }
 main.container { max-width: 1240px; }
 
