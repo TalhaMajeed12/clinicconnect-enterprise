@@ -78,7 +78,7 @@
                     </li>
                     
                     {% if session.get('user_id') %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> {{ t('logout') }}</a></li>
+                        <li class="nav-item d-lg-none"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> {{ t('logout') }}</a></li>
                     {% else %}
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i> {{ t('login') }}</a></li>
                     {% endif %}
