@@ -19,6 +19,21 @@ body { color: var(--cc-navy); }
 a { color: var(--cc-primary); }
 a:hover, a:focus { color: var(--cc-primary-dark); }
 .text-primary, .link-primary { color: var(--cc-primary) !important; }
+.btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--cc-primary);
+    --bs-btn-border-color: var(--cc-primary);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--cc-primary-dark);
+    --bs-btn-hover-border-color: var(--cc-primary-dark);
+    --bs-btn-focus-shadow-rgb: 18, 110, 106;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--cc-primary-dark);
+    --bs-btn-active-border-color: var(--cc-primary-dark);
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: #579b94;
+    --bs-btn-disabled-border-color: #579b94;
+}
 .btn-outline-primary {
     --bs-btn-color: var(--cc-primary);
     --bs-btn-border-color: var(--cc-primary);
@@ -32,6 +47,38 @@ a:hover, a:focus { color: var(--cc-primary-dark); }
     --bs-btn-disabled-color: var(--cc-primary);
     --bs-btn-disabled-border-color: var(--cc-primary);
 }
+.form-check-input:checked,
+.form-check-input[type="checkbox"]:indeterminate {
+    background-color: var(--cc-primary);
+    border-color: var(--cc-primary);
+}
+.form-check-input:focus {
+    border-color: #76b8ad;
+    box-shadow: 0 0 0 .22rem rgb(18 110 106 / 14%);
+}
+.page-link { color: var(--cc-primary); }
+.page-link:hover, .page-link:focus { color: var(--cc-primary-dark); }
+.active > .page-link,
+.page-link.active,
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link,
+.list-group-item.active,
+.dropdown-item.active,
+.dropdown-item:active {
+    background-color: var(--cc-primary);
+    border-color: var(--cc-primary);
+    color: #fff;
+}
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px #f2faf8 inset !important;
+    -webkit-text-fill-color: var(--cc-navy) !important;
+    caret-color: var(--cc-navy);
+}
+::selection { background: #cce9e4; color: var(--cc-navy); }
 html { scroll-behavior: smooth; }
 main.container { max-width: 1240px; }
 
