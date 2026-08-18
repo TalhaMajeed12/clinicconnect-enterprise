@@ -2,6 +2,33 @@
     'use strict';
 
     const originalLabels = new WeakMap();
+    const closeAlert = (item) => {
+        if (!item?.isConnected) return;
+        if (window.bootstrap && item.classList.contains('alert-dismissible')) {
+            bootstrap.Alert.getOrCreateInstance(item).close();
+            return;
+        }
+        item.classList.remove('show');
+        window.setTimeout(() => item.remove(), 180);
+    };
+
+    const scheduleAlertDismissal = (item) => {
+        if (item.dataset.persist !== undefined) return;
+        const isImportant = item.classList.contains('alert-danger') || item.classList.contains('alert-warning');
+        const delay = isImportant ? 7000 : 4500;
+        let timer = window.setTimeout(() => closeAlert(item), delay);
+        const pause = () => window.clearTimeout(timer);
+        const resume = () => {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(() => closeAlert(item), delay);
+        };
+        item.addEventListener('mouseenter', pause);
+        item.addEventListener('mouseleave', resume);
+        item.addEventListener('focusin', pause);
+        item.addEventListener('focusout', resume);
+    };
+
+    document.querySelectorAll('.alert.show').forEach(scheduleAlertDismissal);
 
     window.showFeedback = (message, type = 'info') => {
         let region = document.getElementById('global-feedback');
@@ -13,10 +40,10 @@
             document.body.appendChild(region);
         }
         const item = document.createElement('div');
-        item.className = `alert alert-${type} shadow-sm mb-2`;
+        item.className = `alert alert-${type} fade show shadow-sm mb-2`;
         item.textContent = message;
         region.appendChild(item);
-        window.setTimeout(() => item.remove(), 5000);
+        scheduleAlertDismissal(item);
     };
 
     const unlockForms = () => {
