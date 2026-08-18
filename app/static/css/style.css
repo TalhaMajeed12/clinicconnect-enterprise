@@ -370,6 +370,34 @@ h3 {
     border-radius: 0.7rem;
 }
 
+.flash-stack {
+    display: grid;
+    gap: 0.75rem;
+    max-width: min(28rem, calc(100vw - 2rem));
+    pointer-events: none;
+    position: fixed;
+    right: 1rem;
+    top: 5.5rem;
+    width: 100%;
+    z-index: 1090;
+}
+
+.flash-stack .alert {
+    box-shadow: 0 0.75rem 2rem rgb(23 50 77 / 18%) !important;
+    margin: 0;
+    pointer-events: auto;
+}
+
+@media (max-width: 575.98px) {
+    .flash-stack {
+        left: 0.75rem;
+        max-width: none;
+        right: 0.75rem;
+        top: 4.75rem;
+        width: auto;
+    }
+}
+
 .badge {
     padding: 0.45em 0.7em;
 }
