@@ -4,6 +4,7 @@ from app.models import User, PatientProfile, Visit, Appointment, Payment, Prescr
 from app.utils.translations import t
 from datetime import datetime
 from app.utils.audit import record_audit
+from app.utils.timezone import clinic_now
 
 patient_bp = Blueprint('patient', __name__)
 
@@ -28,7 +29,7 @@ def dashboard():
     upcoming = Appointment.query.filter_by(
         patient_id=patient.id
     ).filter(
-        Appointment.appointment_date >= datetime.utcnow()
+        Appointment.appointment_date >= clinic_now()
     ).order_by(Appointment.appointment_date.asc()).all()
 
     recent_visits = Visit.query.filter_by(
@@ -97,7 +98,7 @@ def appointments():
     return render_template(
         'patient/appointments.html',
         appointments=appointments,
-        now=datetime.utcnow()
+        now=clinic_now()
     )
 
 
@@ -118,7 +119,7 @@ def cancel_appointment(appointment_id):
         flash(t('Unauthorized'), 'danger')
         return redirect(url_for('patient.dashboard'))
 
-    if appointment.status not in ('pending', 'confirmed') or appointment.appointment_date <= datetime.utcnow():
+    if appointment.status not in ('pending', 'confirmed') or appointment.appointment_date <= clinic_now():
         flash(t('This appointment can no longer be cancelled.'), 'warning')
         return redirect(url_for('patient.appointments'))
 

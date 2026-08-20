@@ -8,6 +8,7 @@ from uuid import uuid4
 from sqlalchemy import func
 from app.utils.patient_search import search_patients_by_fields
 from app.utils.appointment_slots import is_available_slot
+from app.utils.timezone import clinic_today
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -123,7 +124,7 @@ def dashboard():
         )
 
         total_appointments = Appointment.query.count()
-        today = datetime.now().date()
+        today = clinic_today()
         todays_appointments = Appointment.query.filter(
             func.date(Appointment.appointment_date) == today
         ).count()

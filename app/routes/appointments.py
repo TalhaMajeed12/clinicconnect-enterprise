@@ -11,6 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from app.utils.appointment_slots import available_slots, is_available_slot
 from app.utils.audit import record_audit
+from app.utils.timezone import clinic_now, clinic_today
 
 appointments_bp = Blueprint('appointments', __name__)
 
@@ -74,7 +75,7 @@ def book():
         if not clinician or not clinician.user or not clinician.user.is_active or not clinician.is_available:
             flash(t('The selected clinician is not available.'), 'danger')
             return redirect(url_for('appointments.book'))
-        if appointment_date <= datetime.now():
+        if appointment_date <= clinic_now():
             flash(t('Appointments must be booked in the future.'), 'danger')
             return redirect(url_for('appointments.book'))
 
@@ -130,7 +131,7 @@ def slots():
     clinician = db.session.get(ClinicianProfile, clinician_id)
     if not clinician or not clinician.user or not clinician.user.is_active or not clinician.is_available:
         return jsonify({'error': 'Clinician unavailable'}), 404
-    if target_date < datetime.now().date() or target_date > (datetime.now().date() + timedelta(days=60)):
+    if target_date < clinic_today() or target_date > (clinic_today() + timedelta(days=60)):
         return jsonify({'error': 'Date must be within the next 60 days'}), 400
     items = available_slots(clinician, target_date)
     return jsonify({
@@ -146,10 +147,10 @@ def discovery():
     specialty = request.args.get('specialty', '').strip()
     date_value = request.args.get('date', '').strip()
     try:
-        start_date = datetime.strptime(date_value, '%Y-%m-%d').date() if date_value else datetime.now().date()
+        start_date = datetime.strptime(date_value, '%Y-%m-%d').date() if date_value else clinic_today()
     except ValueError:
         return jsonify({'error': 'Choose a valid date'}), 400
-    if start_date < datetime.now().date() or start_date > datetime.now().date() + timedelta(days=60):
+    if start_date < clinic_today() or start_date > clinic_today() + timedelta(days=60):
         return jsonify({'error': 'Date must be within the next 60 days'}), 400
 
     clinicians = _active_clinicians(specialty)
@@ -190,7 +191,7 @@ def guest_request():
         clinician = db.session.get(ClinicianProfile, int(data['clinician_id']))
     except (TypeError, ValueError):
         return jsonify({'error': 'Check the date, doctor, and time.'}), 400
-    if dob >= datetime.now().date() or not clinician or clinician.specialty != data['specialty']:
+    if dob >= clinic_today() or not clinician or clinician.specialty != data['specialty']:
         return jsonify({'error': 'Check the personal details and specialty.'}), 400
     if not is_available_slot(clinician, preferred_at):
         return jsonify({'error': 'That slot is no longer available. Choose another option.'}), 409

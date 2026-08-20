@@ -5,6 +5,7 @@ from app.models import (User, PatientProfile, ClinicianProfile, ClinicianTimeOff
 from datetime import datetime, date
 from app.utils.patient_search import search_patients_by_fields
 from app.utils.audit import record_audit
+from app.utils.timezone import clinic_today
 
 clinician_bp = Blueprint('clinician', __name__)
 
@@ -56,7 +57,7 @@ def dashboard():
 
     try:
         clinician = get_clinician()
-        today = date.today()
+        today = clinic_today()
 
         appointments = Appointment.query.filter_by(
             clinician_id=clinician.id
@@ -538,7 +539,7 @@ def time_off():
         except ValueError:
             flash('Enter valid time-off dates and times.', 'danger')
             return redirect(url_for('clinician.time_off'))
-        if start_date < date.today():
+        if start_date < clinic_today():
             flash('Time off cannot start in the past.', 'danger')
             return redirect(url_for('clinician.time_off'))
         if end_date < start_date or (not full_day and start_time >= end_time):

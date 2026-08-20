@@ -11,6 +11,7 @@ from app.models import (Appointment, AuditLog, ClinicianProfile, ClinicianTimeOf
                         ConsultationMessage, DoctorReview, GuestAppointmentRequest,
                         PasswordResetToken, PatientProfile, Prescription, User,
                         VideoConsultation, Visit)
+from app.utils.timezone import clinic_now
 
 
 class CoreFlowTests(unittest.TestCase):
@@ -534,7 +535,7 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(db.session.get(Appointment, appointment.id).status, 'completed')
 
     def test_video_room_enforces_type_status_window_and_object_access(self):
-        now = datetime.now()
+        now = clinic_now()
         in_person = Appointment(
             patient_id=self.patient.id, clinician_id=self.clinician.id,
             appointment_date=now + timedelta(minutes=5), status='confirmed',
@@ -578,7 +579,7 @@ class CoreFlowTests(unittest.TestCase):
     def test_video_visit_prescription_and_completion_form_one_history_chain(self):
         appointment = Appointment(
             patient_id=self.patient.id, clinician_id=self.clinician.id,
-            appointment_date=datetime.now() + timedelta(minutes=5),
+            appointment_date=clinic_now() + timedelta(minutes=5),
             status='confirmed', appointment_type='video',
         )
         db.session.add(appointment)

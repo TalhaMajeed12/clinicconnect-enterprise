@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import limiter
 from app.utils.appointment_slots import is_available_slot
 from app.utils.audit import record_audit
+from app.utils.timezone import clinic_now
 
 api_bp = Blueprint('api', __name__)
 
@@ -193,7 +194,7 @@ def create_appointment(current_user):
                  .with_for_update().first())
     if not patient or not clinician or not clinician.user or not clinician.user.is_active:
         return jsonify({'error': 'Clinician unavailable'}), 404
-    if appointment_date <= datetime.now() or not is_available_slot(clinician, appointment_date):
+    if appointment_date <= clinic_now() or not is_available_slot(clinician, appointment_date):
         return jsonify({'error': 'That appointment slot is unavailable'}), 409
 
     appointment = Appointment(

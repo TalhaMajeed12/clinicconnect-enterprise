@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
 
+from app.utils.timezone import clinic_now
+
 
 JOINABLE_STATUSES = {'confirmed', 'checked_in'}
 
 
 def consultation_join_state(appointment, config, now=None):
     """Return a centralized, display-safe video-room access decision."""
-    now = now or datetime.now()
+    now = now or clinic_now()
     if appointment.appointment_type != 'video':
         return {
             'allowed': False,

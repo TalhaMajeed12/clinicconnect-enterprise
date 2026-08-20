@@ -94,6 +94,7 @@ class Config:
     VIDEO_JOIN_EARLY_MINUTES = int(os.environ.get('VIDEO_JOIN_EARLY_MINUTES', 15))
     VIDEO_JOIN_GRACE_MINUTES = int(os.environ.get('VIDEO_JOIN_GRACE_MINUTES', 30))
     CLINIC_PHONE = os.environ.get('CLINIC_PHONE', '+92 300 0000000')
+    CLINIC_TIMEZONE = os.environ.get('CLINIC_TIMEZONE', 'Asia/Karachi')
     
     # Logging
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')

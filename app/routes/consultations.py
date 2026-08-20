@@ -9,6 +9,7 @@ from app.models import (Appointment, ConsultationMessage, User,
                         VideoConsultation)
 from app.utils.audit import record_audit
 from app.utils.video_consultation import consultation_join_state
+from app.utils.timezone import clinic_now
 
 
 consultations_bp = Blueprint('consultations', __name__)
@@ -63,7 +64,7 @@ def token_room(room_token):
         appointment_id=appointment.id
     ).order_by(ConsultationMessage.created_at.asc()).all()
     join_state = consultation_join_state(
-        appointment, current_app.config, now=datetime.now()
+        appointment, current_app.config, now=clinic_now()
     )
     if join_state['allowed']:
         video_session = appointment.video_session

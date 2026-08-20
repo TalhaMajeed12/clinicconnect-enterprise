@@ -67,6 +67,7 @@ class Appointment(db.Model):
         return {
             "id": self.id,
             "appointment_date": self.appointment_date.isoformat(),
+            "timezone": "Asia/Karachi",
             "status": self.status,
             "appointment_type": self.appointment_type,
             "reason": self.reason

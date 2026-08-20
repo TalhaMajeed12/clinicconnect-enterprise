@@ -1,6 +1,7 @@
 from datetime import datetime, time, timedelta
 
 from app.models import Appointment, ClinicianTimeOff
+from app.utils.timezone import clinic_now
 
 
 ACTIVE_SLOT_STATUSES = ('pending', 'confirmed', 'checked_in')
@@ -8,7 +9,7 @@ ACTIVE_SLOT_STATUSES = ('pending', 'confirmed', 'checked_in')
 
 def available_slots(clinician, target_date, now=None):
     """Return valid appointment starts for one clinician/day."""
-    now = now or datetime.now()
+    now = now or clinic_now()
     working_days = [str(day).lower() for day in (clinician.working_days or [])]
     if target_date.strftime('%A').lower() not in working_days:
         return []
