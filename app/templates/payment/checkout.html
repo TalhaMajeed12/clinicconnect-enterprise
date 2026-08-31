@@ -8,7 +8,7 @@
                 <h4>Payment Checkout</h4>
             </div>
             <div class="card-body">
-                <p><strong>Appointment:</strong> {{ appointment.appointment_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Appointment:</strong> {{ appointment.appointment_date.strftime('%d %b %Y, %I:%M %p') }} PKT</p>
                 <p><strong>Doctor:</strong> {{ appointment.clinician.user.full_name if appointment.clinician else '' }}</p>
                 <hr>
                 <p><strong>Total Fee:</strong> PKR {{ total }}</p>

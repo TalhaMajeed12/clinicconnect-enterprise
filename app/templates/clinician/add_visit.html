@@ -8,7 +8,7 @@
     <div class="card">
         <div class="card-body">
             <form method="POST">
-                {% if appointment %}<input type="hidden" name="appointment_id" value="{{ appointment.id }}"><div class="alert alert-info"><strong>{{ 'Video consultation' if appointment.appointment_type == 'video' else 'In-person appointment' }}</strong> · {{ appointment.appointment_date.strftime('%d %b %Y, %I:%M %p') }} · Appointment #{{ appointment.id }}</div>{% endif %}
+                {% if appointment %}<input type="hidden" name="appointment_id" value="{{ appointment.id }}"><div class="alert alert-info"><strong>{{ 'Video consultation' if appointment.appointment_type == 'video' else 'In-person visit' }}</strong> · {{ appointment.appointment_date.strftime('%d %b %Y, %I:%M %p') }} PKT · Appointment #{{ appointment.id }}</div>{% endif %}
                 <div class="alert alert-light border"><strong>Prescription (optional)</strong><div class="row mt-2"><div class="col-md-3"><input class="form-control" name="medication" placeholder="Medication"></div><div class="col-md-3"><input class="form-control" name="dosage" placeholder="Dosage"></div><div class="col-md-3"><input class="form-control" name="frequency" placeholder="Frequency"></div><div class="col-md-3"><input class="form-control" name="duration" placeholder="Duration"></div></div><textarea class="form-control mt-2" name="instructions" placeholder="Instructions"></textarea></div>
                 <div class="mb-3">
                     <label class="form-label">Chief Complaint *</label>

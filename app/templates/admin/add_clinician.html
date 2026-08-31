@@ -7,12 +7,8 @@
     
     <div class="card">
         <div class="card-body">
-            <!-- Back to Dashboard Button -->
             <div class="mb-3">
-                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                <a href="{{ url_for('admin.clinicians') }}" class="btn btn-secondary">
+                <a href="{{ url_for('admin.clinicians') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Clinicians
                 </a>
             </div>
@@ -97,7 +93,7 @@
 
                 <div class="form-check form-switch mb-4">
                     <input class="form-check-input" type="checkbox" role="switch" id="is_available" name="is_available" checked>
-                    <label class="form-check-label" for="is_available"><strong>Available for online booking</strong></label>
+                    <label class="form-check-label" for="is_available"><strong>Accept patient appointment requests</strong></label>
                     <div class="form-text">Uses the default Monday–Friday, 9:00 AM–5:00 PM schedule until the clinician customizes Availability.</div>
                 </div>
                 

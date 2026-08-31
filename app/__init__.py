@@ -100,7 +100,9 @@ def create_app(config_name='default'):
     # ADD TRANSLATION FUNCTION TO JINJA2 TEMPLATES
     # ============================================
     from app.utils.translations import t
+    from app.utils.timezone import format_clinic_datetime
     app.jinja_env.globals.update(t=t)
+    app.jinja_env.filters['clinic_datetime'] = format_clinic_datetime
     
     # Also add as context processor for templates
     @app.context_processor

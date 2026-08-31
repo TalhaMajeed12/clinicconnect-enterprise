@@ -46,7 +46,7 @@
         {% for message in messages %}
           <article class="consultation-message {{ 'mine' if message.sender_id == current_user.id else 'theirs' }}">
             <div>{{ message.body or '[Unable to decrypt message]' }}</div>
-            <small>{{ 'You' if message.sender_id == current_user.id else message.sender.full_name }} · {{ message.created_at.strftime('%d %b, %I:%M %p') }}</small>
+            <small>{{ 'You' if message.sender_id == current_user.id else message.sender.full_name }} · {{ message.created_at|clinic_datetime('%d %b, %I:%M %p') }}</small>
           </article>
         {% else %}
           <p class="text-muted text-center my-auto">No messages yet. Use this space for appointment-related communication.</p>

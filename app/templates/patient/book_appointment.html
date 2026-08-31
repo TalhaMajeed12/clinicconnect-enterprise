@@ -14,7 +14,7 @@
             <option value="{{ clinician.id }}" {% if not clinician.is_available %}disabled{% endif %}>Dr. {{ clinician.user.full_name }} — {{ clinician.specialty }} — {% if clinician.is_available %}{{ '%.1f'|format(clinician.average_rating or 0) }}★ / {{ clinician.total_reviews or 0 }} reviews (PKR {{ clinician.consultation_fee }}){% else %}availability setup required{% endif %}</option>
             {% endfor %}
         </select>
-        {% if clinicians|selectattr('is_available', 'equalto', false)|list %}<div class="form-text">Clinicians marked “availability setup required” are saved in the system but cannot accept online appointments yet.</div>{% endif %}
+        {% if clinicians|selectattr('is_available', 'equalto', false)|list %}<div class="form-text">Clinicians marked “availability setup required” are saved in the system but cannot accept appointment requests yet.</div>{% endif %}
     </div>
     <fieldset class="mb-3">
         <legend class="form-label">Appointment type</legend>
@@ -27,7 +27,7 @@
         <div class="col-md-5">
             <label for="slot_date" class="form-label">Appointment date</label>
             <input id="slot_date" type="date" class="form-control" required>
-            <div class="form-text">Choose any date within the next 60 days.</div>
+            <div class="form-text">Choose any date within the next 60 days. All times use Pakistan Standard Time (PKT).</div>
         </div>
         <div class="col-md-7">
             <label class="form-label">Available time</label>
@@ -42,7 +42,7 @@
     <button class="btn btn-primary" type="submit">Review and continue to payment</button>
 </form>
 {% else %}
-<div class="alert alert-info">No clinicians are currently available for online booking.</div>
+<div class="alert alert-info">No clinicians are currently accepting appointment requests. Please check again later or contact the clinic.</div>
 {% endif %}
 {% endblock %}
 {% block scripts %}

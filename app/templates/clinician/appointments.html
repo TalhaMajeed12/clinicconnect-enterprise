@@ -3,16 +3,16 @@
 
 {% block content %}
 <div class="container-fluid">
-    <h2><i class="fas fa-calendar-check"></i> My Appointments</h2>
-    <hr>
+    <header class="page-heading"><div class="eyebrow">Clinical schedule</div><h1 class="h2 mb-1">My appointments</h1><p class="text-muted mb-0">Review visit type, patient details, and appointment status. All times use Pakistan Standard Time (PKT).</p></header>
     
     <div class="card">
         <div class="card-body">
             <!-- Filters -->
-            <form method="GET" class="row mb-3">
+            <form method="GET" class="row g-3 align-items-end mb-4">
                 <div class="col-md-3">
-                    <select name="status" class="form-control">
-                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <label for="status-filter" class="form-label">Status</label>
+                    <select id="status-filter" name="status" class="form-select">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All statuses</option>
                         <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
                         <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
                         <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
@@ -20,21 +20,19 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="appointment_type_filter" class="form-label">Show appointment type</label>
+                    <label for="appointment_type_filter" class="form-label">Visit type</label>
                     <select id="appointment_type_filter" name="type" class="form-select">
                         <option value="all" {% if type_filter == 'all' %}selected{% endif %}>All appointments</option>
-                        <option value="video" {% if type_filter == 'video' %}selected{% endif %}>Video only</option>
-                        <option value="in_person" {% if type_filter == 'in_person' %}selected{% endif %}>In-person only</option>
+                        <option value="video" {% if type_filter == 'video' %}selected{% endif %}>Video consultations</option>
+                        <option value="in_person" {% if type_filter == 'in_person' %}selected{% endif %}>In-person visits</option>
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <input type="date" name="date" class="form-control" value="{{ date_filter }}">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <label for="date-filter" class="form-label">Appointment date</label>
+                    <input id="date-filter" type="date" name="date" class="form-control" value="{{ date_filter }}">
                 </div>
                 <div class="col-md-3">
-                    <a href="{{ url_for('clinician.appointments') }}" class="btn btn-secondary">Clear</a>
+                    <div class="d-flex gap-2"><button type="submit" class="btn btn-primary flex-fill">Apply filters</button><a href="{{ url_for('clinician.appointments') }}" class="btn btn-outline-secondary">Clear</a></div>
                 </div>
             </form>
             
@@ -55,7 +53,7 @@
                             {% for appointment in appointments %}
                             <tr>
                                 <td>{{ appointment.patient.user.full_name if appointment.patient and appointment.patient.user else 'N/A' }}</td>
-                                <td>{{ appointment.appointment_date.strftime('%Y-%m-%d %H:%M') if appointment.appointment_date else 'N/A' }}</td>
+                                <td>{% if appointment.appointment_date %}<strong>{{ appointment.appointment_date.strftime('%d %b %Y') }}</strong><small class="d-block text-muted">{{ appointment.appointment_date.strftime('%I:%M %p') }} PKT</small>{% else %}N/A{% endif %}</td>
                                 <td><span class="appointment-type-badge {{ 'is-video' if appointment.appointment_type == 'video' else 'is-in-person' }}">{{ 'Video consultation' if appointment.appointment_type == 'video' else 'In-person appointment' }}</span></td>
                                 <td>{{ appointment.reason or 'N/A' }}</td>
                                 <td>{{ status_badge(appointment.status) }}</td>
@@ -68,12 +66,12 @@
                                         {% elif appointment.status == 'checked_in' %}<option value="completed">Complete</option>
                                         {% endif %}
                                     </select>
-                                    <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-info" title="View patient">
-                                        <i class="fas fa-eye"></i><span class="visually-hidden">View patient</span>
+                                    <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-outline-secondary" title="View patient record">
+                                        View patient
                                     </a>
                                     {% if appointment.status in ['confirmed', 'checked_in'] and not appointment.visits %}
                                     <a href="{{ url_for('clinician.add_visit', patient_id=appointment.patient_id, appointment_id=appointment.id) }}" class="btn btn-sm btn-outline-primary" title="Record the visit and optional prescription">
-                                        <i class="fas fa-notes-medical"></i><span class="visually-hidden">Record visit</span>
+                                        Record visit
                                     </a>
                                     {% endif %}
                                     {% if appointment.appointment_type == 'video' and appointment.status in ['confirmed', 'checked_in'] %}

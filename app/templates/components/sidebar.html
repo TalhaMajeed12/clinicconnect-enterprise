@@ -19,10 +19,9 @@
     <a class="{{ 'active' if request.endpoint == 'clinician.time_off' }}" href="{{ url_for('clinician.time_off') }}"><i class="fas fa-calendar-xmark"></i><span>Time off</span></a>
   {% else %}
     <a class="{{ 'active' if request.endpoint == 'patient.dashboard' }}" href="{{ url_for('patient.dashboard') }}"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
-    <a class="{{ 'active' if request.endpoint == 'patient.appointments' }}" href="{{ url_for('patient.appointments') }}"><i class="fas fa-calendar-check"></i><span>Appointments</span></a>
+    <a class="{{ 'active' if request.endpoint in ['patient.appointments', 'consultations.room', 'consultations.token_room'] }}" href="{{ url_for('patient.appointments') }}"><i class="fas fa-calendar-check"></i><span>Appointments</span></a>
     <a class="{{ 'active' if request.endpoint == 'appointments.book' }}" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i><span>Request appointment</span></a>
     <a class="{{ 'active' if request.endpoint == 'patient.history' }}" href="{{ url_for('patient.history') }}"><i class="fas fa-notes-medical"></i><span>Medical history</span></a>
-    <a class="{{ 'active' if request.endpoint == 'consultations.room' }}" href="{{ url_for('patient.appointments') }}"><i class="fas fa-video"></i><span>Consultations</span></a>
   {% endif %}
   </nav>
   <a class="portal-logout" href="{{ url_for('auth.logout') }}"><i class="fas fa-arrow-right-from-bracket"></i><span>Log out</span></a>

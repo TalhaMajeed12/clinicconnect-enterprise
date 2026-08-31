@@ -2,31 +2,12 @@
 
 {% block content %}
 <div class="container-fluid">
-    <h2><i class="fas fa-user-md"></i> Clinicians</h2>
-    <hr>
-    
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    <header class="page-heading"><div class="eyebrow">Clinical team</div><h1 class="h2 mb-1">Clinicians</h1><p class="text-muted mb-0">Manage accounts, specialties, fees, and whether clinicians accept patient appointment requests.</p></header>
     
     <div class="card">
         <div class="card-body">
-            <!-- Back to Dashboard Button -->
-            <div class="mb-3">
-                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </div>
-            
-            <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-success mb-3">
-                <i class="fas fa-plus"></i> Add Clinician
+            <a href="{{ url_for('admin.add_clinician') }}" class="btn btn-primary mb-3">
+                <i class="fas fa-plus"></i> Add clinician
             </a>
             
             <div class="table-responsive">
@@ -41,7 +22,7 @@
                             <th>Fee (PKR)</th>
                             <th>Pre-payment (25%)</th>
                             <th>Account</th>
-                            <th>Online booking</th>
+                            <th>Patient requests</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -59,14 +40,14 @@
                                 <td><span class="badge bg-{{ 'success' if clinician.user and clinician.user.is_active else 'secondary' }}">{{ 'Active' if clinician.user and clinician.user.is_active else 'Inactive' }}</span></td>
                                 <td><span class="badge bg-{{ 'success' if clinician.is_available else 'warning' }}">{{ 'Available' if clinician.is_available else 'Setup required' }}</span></td>
                                 <td>
-                                    <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-eye"></i>
+                                    <a href="{{ url_for('admin.view_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-outline-secondary" aria-label="View {{ clinician.user.full_name if clinician.user else 'clinician' }}">
+                                        View
                                     </a>
-                                    <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="{{ url_for('admin.edit_clinician', clinician_id=clinician.id) }}" class="btn btn-sm btn-outline-primary" aria-label="Edit {{ clinician.user.full_name if clinician.user else 'clinician' }}">
+                                        Edit
                                     </a>
-                                    <button class="btn btn-sm btn-{{ 'secondary' if clinician.user and clinician.user.is_active else 'success' }} toggle-clinician" data-id="{{ clinician.id }}">
-                                        <i class="fas fa-power-off"></i>
+                                    <button class="btn btn-sm btn-{{ 'outline-danger' if clinician.user and clinician.user.is_active else 'outline-primary' }} toggle-clinician" data-id="{{ clinician.id }}" aria-label="{{ 'Deactivate' if clinician.user and clinician.user.is_active else 'Activate' }} {{ clinician.user.full_name if clinician.user else 'clinician' }}">
+                                        {{ 'Deactivate' if clinician.user and clinician.user.is_active else 'Activate' }}
                                     </button>
                                 </td>
                             </tr>

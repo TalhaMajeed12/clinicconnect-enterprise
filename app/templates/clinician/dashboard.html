@@ -10,36 +10,36 @@
         <div class="col-md-3">
             <div class="card dashboard-stat">
                 <div class="card-body">
-                    <span class="stat-icon"><i class="fas fa-users"></i></span><span class="stat-label">Total Patients</span><span class="stat-value">{{ total_patients or 0 }}</span>
+                    <span class="stat-icon"><i class="fas fa-users"></i></span><span class="stat-label">My patients</span><span class="stat-value">{{ total_patients or 0 }}</span>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card dashboard-stat">
                 <div class="card-body">
-                    <span class="stat-icon"><i class="fas fa-calendar-check"></i></span><span class="stat-label">My Appointments</span><span class="stat-value">{{ total_appointments or 0 }}</span>
+                    <span class="stat-icon"><i class="fas fa-calendar-check"></i></span><span class="stat-label">All appointments</span><span class="stat-value">{{ total_appointments or 0 }}</span>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card dashboard-stat">
                 <div class="card-body">
-                    <span class="stat-icon"><i class="fas fa-hourglass-half"></i></span><span class="stat-label">Pending</span><span class="stat-value">{{ pending_appointments or 0 }}</span>
+                    <span class="stat-icon"><i class="fas fa-hourglass-half"></i></span><span class="stat-label">Awaiting confirmation</span><span class="stat-value">{{ pending_appointments or 0 }}</span>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card dashboard-stat">
                 <div class="card-body">
-                    <span class="stat-icon"><i class="fas fa-calendar-day"></i></span><span class="stat-label">Today's Appointments</span><span class="stat-value">{{ appointments|length }}</span>
+                    <span class="stat-icon"><i class="fas fa-calendar-day"></i></span><span class="stat-label">Today</span><span class="stat-value">{{ appointments|length }}</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row g-4 mt-1">
-        <div class="col-lg-7"><section class="card h-100"><div class="card-header"><h2 class="h5 mb-0">Next patient today</h2></div><div class="card-body">{% if next_appointment %}<div class="next-appointment"><div class="calendar-tile"><strong>{{ next_appointment.appointment_date.strftime('%H:%M') }}</strong><span>Today</span></div><div class="flex-grow-1"><h3 class="h5 mb-1">{{ next_appointment.patient.user.full_name if next_appointment.patient and next_appointment.patient.user else 'Patient' }}</h3><p class="text-muted mb-2">{{ next_appointment.reason or 'Reason not provided' }}</p>{{ status_badge(next_appointment.status) }}</div><a class="btn btn-outline-primary" href="{{ url_for('clinician.patient_folder', patient_id=next_appointment.patient_id) }}">View patient</a></div>{% else %}{{ empty_state('calendar-check', 'No appointments today', 'Your next scheduled patient will appear here.') }}{% endif %}</div></section></div>
-        <div class="col-lg-5"><section class="card h-100"><div class="card-header"><h2 class="h5 mb-0">Schedule status</h2></div><div class="card-body"><dl class="row mb-0"><dt class="col-5">Booking</dt><dd class="col-7">{{ 'Accepting online bookings' if clinician.is_available else 'Online booking paused' }}</dd><dt class="col-5">Working hours</dt><dd class="col-7">{{ (clinician.working_hours or {}).get('start', '—') }}–{{ (clinician.working_hours or {}).get('end', '—') }}</dd><dt class="col-5">Upcoming time off</dt><dd class="col-7">{{ upcoming_time_off.start_date.strftime('%d %b %Y') if upcoming_time_off else 'None scheduled' }}</dd></dl><div class="d-flex gap-2 mt-3"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('clinician.availability') }}">Edit availability</a><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('clinician.time_off') }}">Manage time off</a></div></div></section></div>
+        <div class="col-lg-7"><section class="card h-100"><div class="card-header"><h2 class="h5 mb-0">Next patient today</h2></div><div class="card-body">{% if next_appointment %}<div class="next-appointment"><div class="calendar-tile"><strong>{{ next_appointment.appointment_date.strftime('%H:%M') }}</strong><span>PKT</span></div><div class="flex-grow-1"><h3 class="h5 mb-1">{{ next_appointment.patient.user.full_name if next_appointment.patient and next_appointment.patient.user else 'Patient' }}</h3><p class="text-muted mb-2">{{ 'Video consultation' if next_appointment.appointment_type == 'video' else 'In-person visit' }} · {{ next_appointment.reason or 'Reason not provided' }}</p>{{ status_badge(next_appointment.status) }}</div><a class="btn btn-outline-primary" href="{{ url_for('clinician.patient_folder', patient_id=next_appointment.patient_id) }}">View patient</a></div>{% else %}{{ empty_state('calendar-check', 'No appointments today', 'Your next scheduled patient will appear here.') }}{% endif %}</div></section></div>
+        <div class="col-lg-5"><section class="card h-100"><div class="card-header"><h2 class="h5 mb-0">Schedule status</h2></div><div class="card-body"><dl class="row mb-0"><dt class="col-5">Patient requests</dt><dd class="col-7">{{ 'Accepted' if clinician.is_available else 'Paused' }}</dd><dt class="col-5">Working hours</dt><dd class="col-7">{{ (clinician.working_hours or {}).get('start', '—') }}–{{ (clinician.working_hours or {}).get('end', '—') }} PKT</dd><dt class="col-5">Upcoming time off</dt><dd class="col-7">{{ upcoming_time_off.start_date.strftime('%d %b %Y') if upcoming_time_off else 'None scheduled' }}</dd></dl><div class="d-flex flex-wrap gap-2 mt-3"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('clinician.availability') }}">Edit schedule</a><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('clinician.time_off') }}">Manage time off</a></div></div></section></div>
     </div>
     
     <!-- Quick Actions -->
@@ -47,19 +47,19 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h5>Quick Actions</h5>
+                    <h5 class="mb-0">Quick actions</h5>
                 </div>
                 <div class="card-body quick-actions">
                     <a href="{{ url_for('clinician.add_patient') }}" class="btn btn-primary">
-                        <i class="fas fa-user-plus"></i> Add Patient
+                        <i class="fas fa-user-plus"></i> Add patient
                     </a>
-                    <a href="{{ url_for('clinician.patients_list') }}" class="btn btn-success">
-                        <i class="fas fa-users"></i> View Patients
+                    <a href="{{ url_for('clinician.patients_list') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-users"></i> View patients
                     </a>
-                    <a href="{{ url_for('clinician.appointments') }}" class="btn btn-warning">
-                        <i class="fas fa-calendar-check"></i> View Appointments
+                    <a href="{{ url_for('clinician.appointments') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-check"></i> View appointments
                     </a>
-                    <button id="attendance-toggle" class="btn btn-info" type="button" onclick="toggleAttendance()" aria-describedby="attendance-help">
+                    <button id="attendance-toggle" class="btn btn-outline-secondary" type="button" onclick="toggleAttendance()" aria-describedby="attendance-help">
                         <i class="fas fa-user-clock"></i> <span id="attendance-status">
                             {% set att = clinician.attendance if clinician.attendance else None %}
                             {% if att and att.status == 'online' %}
@@ -69,8 +69,8 @@
                             {% endif %}
                         </span>
                     </button>
+                    <p id="attendance-help" class="form-text grid-column-full mb-0">Attendance is an internal daily record. Patient appointment requests are controlled separately under Availability.</p>
                 </div>
-                <p id="attendance-help" class="form-text mt-3 mb-0">Daily attendance only. Appointment booking is controlled separately under Availability.</p>
             </div>
         </div>
     </div>
@@ -80,7 +80,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h5>Today's Appointments</h5>
+                    <h5 class="mb-0">Today's appointments</h5>
                 </div>
                 <div class="card-body">
                     {% if appointments %}
@@ -90,6 +90,7 @@
                                     <tr>
                                         <th>Patient</th>
                                         <th>Time</th>
+                                        <th>Visit type</th>
                                         <th>Reason</th>
                                         <th>Status</th>
                                         <th>Action</th>
@@ -99,12 +100,13 @@
                                     {% for appointment in appointments %}
                                     <tr>
                                         <td>{{ appointment.patient.user.full_name if appointment.patient and appointment.patient.user else 'N/A' }}</td>
-                                        <td>{{ appointment.appointment_date.strftime('%H:%M') if appointment.appointment_date else 'N/A' }}</td>
+                                        <td>{{ appointment.appointment_date.strftime('%H:%M') ~ ' PKT' if appointment.appointment_date else 'N/A' }}</td>
+                                        <td>{{ 'Video consultation' if appointment.appointment_type == 'video' else 'In-person visit' }}</td>
                                         <td>{{ appointment.reason or 'N/A' }}</td>
                                         <td>{{ status_badge(appointment.status) }}</td>
                                         <td>
-                                            <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
+                                            <a href="{{ url_for('clinician.patient_folder', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-outline-primary">
+                                                View patient
                                             </a>
                                         </td>
                                     </tr>

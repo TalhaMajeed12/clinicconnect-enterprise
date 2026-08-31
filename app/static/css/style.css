@@ -300,6 +300,7 @@ button[aria-busy="true"] { cursor: wait; }
 .row > div:nth-child(4n + 4) .dashboard-stat .stat-icon { background: var(--cc-lilac-soft); color: var(--cc-lilac); }
 .quick-actions { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
 .quick-actions .btn { align-items: center; display: flex; gap: .65rem; justify-content: flex-start; min-height: 3.2rem; }
+.grid-column-full { grid-column: 1 / -1; }
 .quick-actions .btn:nth-child(2) {
     --bs-btn-color: #b65340;
     --bs-btn-border-color: var(--cc-secondary);

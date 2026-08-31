@@ -5,8 +5,9 @@
 <form method="POST" class="card card-body shadow-sm">
     <fieldset class="mb-4"><legend class="form-label">Working days <span class="text-danger">*</span></legend><div class="availability-days">{% for day in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] %}<label class="availability-day" for="{{ day }}"><input class="form-check-input" type="checkbox" name="working_days" value="{{ day }}" id="{{ day }}" {% if day in (clinician.working_days or []) %}checked{% endif %}><span>{{ day[:3]|title }}</span><small>{{ 'Available' if day in (clinician.working_days or []) else 'Off' }}</small></label>{% endfor %}</div></fieldset>
     <div class="row"><div class="col-md-6 mb-3"><label class="form-label" for="availability-start">Daily start time</label><input id="availability-start" class="form-control" type="time" name="start_time" value="{{ (clinician.working_hours or {}).get('start','09:00') }}" required></div><div class="col-md-6 mb-3"><label class="form-label" for="availability-end">Daily end time</label><input id="availability-end" class="form-control" type="time" name="end_time" value="{{ (clinician.working_hours or {}).get('end','17:00') }}" required></div></div>
-    <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="is_available" id="is_available" {% if clinician.is_available %}checked{% endif %}><label class="form-check-label" for="is_available">Accept online bookings</label></div>
-    <button class="btn btn-primary" type="submit">Save availability</button>
+    <div class="form-check mb-1"><input class="form-check-input" type="checkbox" name="is_available" id="is_available" {% if clinician.is_available %}checked{% endif %}><label class="form-check-label" for="is_available">Allow patients to request appointments</label></div>
+    <div class="form-text mb-3">This controls whether your configured slots appear in the patient portal. It does not determine whether visits are video or in-person.</div>
+    <button class="btn btn-primary" type="submit">Save schedule settings</button>
 </form>
 {% endblock %}
 {% block scripts %}<script>document.querySelectorAll('.availability-day input').forEach(input => input.addEventListener('change', () => { input.closest('label').querySelector('small').textContent = input.checked ? 'Available' : 'Off'; }));</script>{% endblock %}

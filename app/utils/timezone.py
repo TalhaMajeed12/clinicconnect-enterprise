@@ -37,3 +37,17 @@ def clinic_now():
 
 def clinic_today():
     return clinic_now().date()
+
+
+def utc_to_clinic(value):
+    """Convert a stored naive UTC timestamp to an aware clinic timestamp."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(clinic_timezone())
+
+
+def format_clinic_datetime(value, pattern='%d %b %Y, %I:%M %p'):
+    converted = utc_to_clinic(value)
+    return f'{converted.strftime(pattern)} PKT' if converted else 'N/A'

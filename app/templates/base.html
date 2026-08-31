@@ -58,7 +58,7 @@
                         {% else %}
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.dashboard' }}" href="{{ url_for('patient.dashboard') }}"><i class="fas fa-chart-pie"></i> {{ t('dashboard') }}</a></li>
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'patient.history' }}" href="{{ url_for('patient.history') }}"><i class="fas fa-history"></i> {{ t('history') }}</a></li>
-                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['patient.appointments', 'consultations.room'] }}" href="{{ url_for('patient.appointments') }}"><i class="fas fa-video"></i> Consultations</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['patient.appointments', 'consultations.room', 'consultations.token_room'] }}" href="{{ url_for('patient.appointments') }}"><i class="fas fa-calendar-check"></i> {{ t('appointments') }}</a></li>
                             <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'appointments.book' }}" href="{{ url_for('appointments.book') }}"><i class="fas fa-calendar-plus"></i> {{ t('book_appointment') }}</a></li>
                       
                         {% endif %}
@@ -141,6 +141,7 @@
     {% endif %}
     
     <!-- Footer -->
+    {% if not session.get('user_id') %}
     <footer class="footer mt-5 py-5">
         <div class="container">
             <div class="row g-4 align-items-start">
@@ -162,6 +163,7 @@
             </div>
         </div>
     </footer>
+    {% endif %}
     
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
