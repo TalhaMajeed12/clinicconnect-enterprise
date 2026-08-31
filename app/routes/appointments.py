@@ -161,7 +161,7 @@ def discovery():
         if slots:
             doctors.append({
                 'id': clinician.id,
-                'name': clinician.user.full_name,
+                'name': clinician.user.full_name or clinician.user.username,
                 'specialty': clinician.specialty,
                 'rating': round(float(clinician.average_rating or 0), 1),
                 'review_count': int(clinician.total_reviews or 0),

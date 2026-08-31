@@ -100,6 +100,22 @@
     date.min = localDate(today);
     date.value = localDate(today);
 
+    const resetSelect = (control, label, disabled = true) => {
+        const option = new Option(label, '', true, true);
+        option.disabled = true;
+        control.replaceChildren(option);
+        control.disabled = disabled;
+    };
+
+    const populateSlots = selectedDoctor => {
+        resetSelect(
+            slot,
+            selectedDoctor ? 'Choose an available time' : 'Select a doctor to view times',
+            !selectedDoctor
+        );
+        (selectedDoctor?.slots || []).forEach(item => slot.add(new Option(item.label, item.value)));
+    };
+
     const loadDiscovery = async () => {
         bookingStatus.textContent = 'Checking clinician availability…';
         const query = new URLSearchParams({date: date.value});
@@ -112,14 +128,18 @@
                 data.specialties.forEach(value => specialty.add(new Option(value, value)));
             }
             doctors = data.doctors;
-            doctor.replaceChildren(new Option('Choose a doctor', ''));
-            doctors.forEach(item => doctor.add(new Option(
-                `Dr. ${item.name} — ${item.specialty} — ${item.rating || 'New'}★ (${item.review_count})`, item.id
-            )));
-            slot.replaceChildren(new Option('Choose a doctor', ''));
+            resetSelect(doctor, doctors.length ? 'Choose a doctor' : 'No doctors available', !doctors.length);
+            doctors.forEach(item => {
+                const reviews = item.review_count
+                    ? `${Number(item.rating).toFixed(1)}★ (${item.review_count} review${item.review_count === 1 ? '' : 's'})`
+                    : 'New · no reviews yet';
+                doctor.add(new Option(`Dr. ${item.name} — ${item.specialty} — ${reviews}`, item.id));
+            });
             if (doctors.length) {
                 doctor.value = String(doctors[0].id);
-                doctors[0].slots.forEach(item => slot.add(new Option(item.label, item.value)));
+                populateSlots(doctors[0]);
+            } else {
+                populateSlots(null);
             }
             bookingStatus.textContent = doctors.length
                 ? 'The best-rated available doctor is selected first. You can choose another doctor or time.'
@@ -131,8 +151,7 @@
     date.addEventListener('change', loadDiscovery);
     doctor.addEventListener('change', () => {
         const selectedDoctor = doctors.find(item => String(item.id) === doctor.value);
-        slot.replaceChildren(new Option('Choose a time', ''));
-        (selectedDoctor?.slots || []).forEach(item => slot.add(new Option(item.label, item.value)));
+        populateSlots(selectedDoctor);
     });
     bookingForm.addEventListener('submit', async (event) => {
         event.preventDefault();
