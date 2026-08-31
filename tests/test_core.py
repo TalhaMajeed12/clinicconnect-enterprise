@@ -398,8 +398,59 @@ class CoreFlowTests(unittest.TestCase):
             'identifier': 'unknown@example.test',
         }, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'If that patient account can receive email', response.data)
+        self.assertIn(b'If that account can receive email', response.data)
         send_reset.assert_not_called()
+
+    @patch('app.routes.auth.send_password_reset_link', return_value=True)
+    def test_verified_clinician_can_recover_by_registered_email_only(self, send_reset):
+        self.clinician_user.email_verified = True
+        db.session.commit()
+        response = self.client.post('/auth/forgot-password', data={
+            'account_type': 'clinician', 'identifier': 'doctor@example.test',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/auth/clinician/login', response.location)
+        self.assertEqual(send_reset.call_count, 1)
+
+        send_reset.reset_mock()
+        self.client.post('/auth/forgot-password', data={
+            'account_type': 'clinician', 'identifier': '2000',
+        })
+        send_reset.assert_not_called()
+
+    def test_admin_temporary_password_forces_clinician_change(self):
+        self._session_as(self.admin)
+        response = self.client.post(
+            f'/admin/clinician/{self.clinician.id}/reset-password',
+            data={
+                'admin_password': 'StrongPass123!',
+                'temporary_password': 'TemporaryPass456!',
+                'confirm_temporary_password': 'TemporaryPass456!',
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(self.clinician_user.must_change_password)
+        self.assertTrue(self.clinician_user.check_password('TemporaryPass456!'))
+        self.assertEqual(
+            AuditLog.query.filter_by(action='clinician_password_reset').count(), 1
+        )
+
+        self.client.get('/auth/logout')
+        login = self.client.post('/auth/clinician/login', data={
+            'username': 'doctor', 'password': 'TemporaryPass456!',
+        })
+        self.assertEqual(login.status_code, 302)
+        blocked = self.client.get('/clinician/dashboard')
+        self.assertIn('/auth/change-password', blocked.location)
+
+        changed = self.client.post('/auth/change-password', data={
+            'current_password': 'TemporaryPass456!',
+            'password': 'PrivateClinician789!',
+            'confirm_password': 'PrivateClinician789!',
+        })
+        self.assertEqual(changed.status_code, 302)
+        self.assertFalse(self.clinician_user.must_change_password)
+        self.assertTrue(self.clinician_user.check_password('PrivateClinician789!'))
 
     @patch('app.utils.email.urlopen')
     def test_brevo_email_transport_uses_https_api(self, open_url):

@@ -37,6 +37,7 @@ class User(UserMixin, db.Model, EncryptionMixin):
     last_login = db.Column(db.DateTime)
     login_attempts = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime)
+    must_change_password = db.Column(db.Boolean, nullable=False, default=False)
     
     language = db.Column(db.String(5), default='en')
     timezone = db.Column(db.String(50), default='Asia/Karachi')

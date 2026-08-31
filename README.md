@@ -61,7 +61,7 @@ Jitsi is a maintainable WebRTC integration suitable for this FYP and supplies si
 1. `python -m venv venv`, then activate `venv\Scripts\activate` on Windows.
 2. `pip install -r requirements.txt`.
 3. Copy `.env.example` to `.env`, replace placeholders, and generate a Fernet key with `Fernet.generate_key()`.
-4. Create PostgreSQL and apply `migrations/001...006` in order.
+4. Create PostgreSQL and apply `migrations/001...007` in order.
 5. Provision users explicitly and run `python run.py`.
 
 Startup intentionally does not create tables or bootstrap an administrator. Back up production before migrations; project migrations are additive and do not intentionally delete clinical data.
@@ -80,7 +80,9 @@ Use fictional records only. No production credentials are committed. Provision s
 
 ## Deployment
 
-Render uses `render.yaml`, `Procfile`, `wsgi.py`, and Gunicorn. HTTPS is mandatory for browser media. Apply `006_add_video_appointment_lifecycle.sql` before this release. The free deployment uses one worker with local sessions/rate limits; use Redis before scaling. Brevo HTTPS email works where SMTP egress is blocked. See [Deployment](docs/Deployment.md).
+Render uses `render.yaml`, `Procfile`, `wsgi.py`, and Gunicorn. HTTPS is mandatory for browser media. Apply migrations through `007_add_forced_password_change.sql` before this release. The free deployment uses one worker with local sessions/rate limits; use Redis before scaling. Brevo HTTPS email works where SMTP egress is blocked. See [Deployment](docs/Deployment.md).
+
+Privileged password recovery is deliberately separated: verified clinicians may request an email reset, or an authenticated administrator may issue a temporary password that must be replaced at next login. Administrators have no public email-reset path. A system owner with trusted shell access can run `flask recover-admin`, which prompts interactively for the username and new password and records the recovery in the audit log.
 
 ## Project Structure
 

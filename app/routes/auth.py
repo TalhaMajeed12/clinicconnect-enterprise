@@ -308,9 +308,22 @@ def logout():
 def forgot_password():
     if request.method == 'POST':
         identifier = (request.form.get('identifier') or '').strip()
+        account_type = request.form.get('account_type', 'patient')
+        if account_type not in {'patient', 'clinician'}:
+            account_type = 'patient'
         user = User.find_by_identifier(identifier) if identifier else None
 
-        if user and user.role == 'patient' and user.is_active and user.email:
+        email_matches = bool(
+            user and User.normalize_identifier(identifier) == User.normalize_identifier(user.email)
+        )
+        eligible = bool(
+            user and user.role == account_type and user.is_active and user.email
+            and (
+                account_type == 'patient'
+                or (email_matches and (user.email_verified or user.is_verified))
+            )
+        )
+        if eligible:
             raw_token = secrets.token_urlsafe(32)
             token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
             PasswordResetToken.query.filter_by(
@@ -336,13 +349,15 @@ def forgot_password():
                 )
 
         session.pop('_flashes', None)
-        flash(
-            'If that patient account can receive email, a reset link has been sent.',
-            'info',
-        )
-        return redirect(url_for('auth.login'))
+        flash('If that account can receive email, a reset link has been sent.', 'info')
+        return redirect(url_for(
+            'auth.clinician_login' if account_type == 'clinician' else 'auth.login'
+        ))
 
-    return render_template('auth/forgot_password.html')
+    account_type = request.args.get('account', 'patient')
+    if account_type not in {'patient', 'clinician'}:
+        account_type = 'patient'
+    return render_template('auth/forgot_password.html', account_type=account_type)
 
 
 @auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
@@ -360,14 +375,16 @@ def reset_password(token):
     if request.method == 'POST':
         password = request.form.get('password') or ''
         confirmation = request.form.get('confirm_password') or ''
-        if len(password) < 8:
-            flash('Password must be at least 8 characters long.', 'danger')
+        if len(password) < 12:
+            flash('Password must be at least 12 characters long.', 'danger')
             return render_template('auth/reset_password.html')
         if password != confirmation:
             flash('Passwords do not match.', 'danger')
             return render_template('auth/reset_password.html')
 
-        reset_record.user.set_password(password)
+        reset_user = reset_record.user
+        reset_user.set_password(password)
+        reset_user.must_change_password = False
         reset_record.used_at = datetime.utcnow()
         db.session.add(AuditLog(
             user_id=reset_record.user_id,
@@ -376,11 +393,48 @@ def reset_password(token):
             ip_address=request.remote_addr,
         ))
         db.session.commit()
+        role = reset_user.role
         session.clear()
         flash('Password reset successful. Please log in.', 'success')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for(
+            'auth.clinician_login' if role == 'clinician' else 'auth.login'
+        ))
 
     return render_template('auth/reset_password.html')
+
+
+@auth_bp.route('/change-password', methods=['GET', 'POST'])
+@limiter.limit('10 per hour', methods=['POST'])
+def change_password():
+    user = db.session.get(User, session.get('user_id')) if session.get('user_id') else None
+    if not user:
+        return redirect(url_for('auth.login'))
+    if request.method == 'POST':
+        current_password = request.form.get('current_password') or ''
+        password = request.form.get('password') or ''
+        confirmation = request.form.get('confirm_password') or ''
+        if not user.check_password(current_password):
+            flash('Current password is incorrect.', 'danger')
+        elif len(password) < 12:
+            flash('New password must be at least 12 characters long.', 'danger')
+        elif password != confirmation:
+            flash('New passwords do not match.', 'danger')
+        elif user.check_password(password):
+            flash('Choose a password different from the temporary password.', 'warning')
+        else:
+            user.set_password(password)
+            user.must_change_password = False
+            PasswordResetToken.query.filter_by(user_id=user.id, used_at=None).update(
+                {'used_at': datetime.utcnow()}
+            )
+            db.session.add(AuditLog(
+                user_id=user.id, action='password_changed',
+                resource_type='authentication', ip_address=request.remote_addr,
+            ))
+            db.session.commit()
+            flash('Password changed successfully.', 'success')
+            return redirect_based_on_role(user.role)
+    return render_template('auth/change_password.html', forced=user.must_change_password)
 
 # ============================================
 # CHANGE LANGUAGE

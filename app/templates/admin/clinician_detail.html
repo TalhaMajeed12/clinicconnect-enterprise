@@ -56,6 +56,21 @@
                 </div>
             </div>
 
+            <section class="card border-warning mt-4">
+                <div class="card-header"><h3 class="h5 mb-0">Issue temporary password</h3></div>
+                <div class="card-body">
+                    <p class="text-muted">Use only after verifying the clinician's identity. Existing reset links will be revoked, and portal access will remain blocked until the clinician replaces this password.</p>
+                    <form method="POST" action="{{ url_for('admin.reset_clinician_password', clinician_id=clinician.id) }}" data-confirm="Issue this temporary password and revoke outstanding reset links?">
+                        <div class="row g-3">
+                            <div class="col-lg-4"><label class="form-label" for="admin-password">Your administrator password</label><input class="form-control" id="admin-password" type="password" name="admin_password" autocomplete="current-password" required></div>
+                            <div class="col-lg-4"><label class="form-label" for="temporary-password">Temporary password</label><input class="form-control" id="temporary-password" type="password" name="temporary_password" minlength="12" autocomplete="new-password" required></div>
+                            <div class="col-lg-4"><label class="form-label" for="confirm-temporary-password">Confirm temporary password</label><input class="form-control" id="confirm-temporary-password" type="password" name="confirm_temporary_password" minlength="12" autocomplete="new-password" required></div>
+                        </div>
+                        <button class="btn btn-outline-warning mt-3" type="submit">Issue temporary password</button>
+                    </form>
+                </div>
+            </section>
+
             <!-- Navigation Buttons -->
             <div class="mt-4">
                 <a href="{{ url_for('admin.clinicians') }}" class="btn btn-secondary">

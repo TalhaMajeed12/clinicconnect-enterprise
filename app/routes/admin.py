@@ -2,7 +2,9 @@ from flask import (Blueprint, current_app, render_template, request, redirect,
                    url_for, flash, session, jsonify)
 from app import db
 from app.models import (User, PatientProfile, ClinicianProfile, Appointment, Payment,
-                        AuditLog, GuestAppointmentRequest, ClinicianTimeOff)
+                        AuditLog, GuestAppointmentRequest, ClinicianTimeOff,
+                        PasswordResetToken)
+from app.extensions import limiter
 from datetime import datetime, timedelta
 from uuid import uuid4
 from sqlalchemy import func
@@ -257,6 +259,43 @@ def view_clinician(clinician_id):
         current_app.logger.exception('Unable to load clinician details')
         flash('Error loading clinician details', 'danger')
         return redirect(url_for('admin.clinicians'))
+
+
+@admin_bp.post('/clinician/<int:clinician_id>/reset-password')
+@limiter.limit('5 per hour')
+def reset_clinician_password(clinician_id):
+    if not is_admin():
+        return redirect(url_for('auth.admin_login'))
+    clinician = ClinicianProfile.query.get_or_404(clinician_id)
+    admin = db.session.get(User, session.get('user_id'))
+    current_password = request.form.get('admin_password') or ''
+    temporary_password = request.form.get('temporary_password') or ''
+    confirmation = request.form.get('confirm_temporary_password') or ''
+    if not admin or not admin.check_password(current_password):
+        flash('Your administrator password is incorrect.', 'danger')
+    elif not clinician.user or clinician.user.role != 'clinician':
+        flash('Clinician account not found.', 'danger')
+    elif len(temporary_password) < 12:
+        flash('Temporary password must be at least 12 characters long.', 'danger')
+    elif temporary_password != confirmation:
+        flash('Temporary passwords do not match.', 'danger')
+    else:
+        clinician.user.set_password(temporary_password)
+        clinician.user.must_change_password = True
+        PasswordResetToken.query.filter_by(
+            user_id=clinician.user.id, used_at=None
+        ).update({'used_at': datetime.utcnow()})
+        db.session.add(AuditLog(
+            user_id=admin.id, action='clinician_password_reset',
+            resource_type='clinician', resource_id=clinician.id,
+            details={'forced_change_required': True},
+        ))
+        db.session.commit()
+        flash(
+            'Temporary password issued. Share it privately; the clinician must change it at next login.',
+            'success',
+        )
+    return redirect(url_for('admin.view_clinician', clinician_id=clinician.id))
 # ============================================
 # VIEW PATIENT (FIXED)
 # ============================================
@@ -323,9 +362,9 @@ def add_clinician():
                 flash('Phone is required.', 'danger')
                 return render_template('admin/add_clinician.html')
 
-            if len(password) < 8:
+            if len(password) < 12:
                 flash(
-                    'Password must be at least 8 characters long.',
+                    'Temporary password must be at least 12 characters long.',
                     'danger'
                 )
                 return render_template('admin/add_clinician.html')
@@ -394,7 +433,10 @@ def add_clinician():
                 role='clinician',
                 full_name=full_name,
                 email=email,
-                phone=phone
+                phone=phone,
+                is_verified=True,
+                email_verified=True,
+                must_change_password=True,
             )
 
             user.set_password(password)

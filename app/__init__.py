@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_session import Session
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -8,6 +8,8 @@ from logging.handlers import RotatingFileHandler
 from app.config import config
 import redis
 import traceback
+import click
+from datetime import datetime
 
 from app.extensions import (
     db,
@@ -215,6 +217,43 @@ def create_app(config_name='default'):
         lang = session.get('language')
         if not lang:
             session['language'] = app.config.get('DEFAULT_LANGUAGE', 'en')
+
+    @app.before_request
+    def require_temporary_password_change():
+        if not session.get('user_id') or request.endpoint in {
+            'static', 'auth.change_password', 'auth.logout'
+        }:
+            return None
+        from app.models import User
+        user = db.session.get(User, session.get('user_id'))
+        if user and user.must_change_password:
+            flash('Change your temporary password before continuing.', 'warning')
+            return redirect(url_for('auth.change_password'))
+
+    @app.cli.command('recover-admin')
+    @click.option('--username', prompt=True, help='Existing administrator username')
+    @click.password_option(
+        '--password', prompt='New administrator password', confirmation_prompt=True
+    )
+    def recover_admin(username, password):
+        """Recover an administrator through trusted shell access only."""
+        from app.models import AuditLog, PasswordResetToken, User
+        if len(password) < 12:
+            raise click.ClickException('Password must be at least 12 characters long.')
+        user = User.query.filter_by(username=username, role='admin', is_active=True).first()
+        if not user:
+            raise click.ClickException('Active administrator account not found.')
+        user.set_password(password)
+        user.must_change_password = False
+        PasswordResetToken.query.filter_by(user_id=user.id, used_at=None).update(
+            {'used_at': datetime.utcnow()}
+        )
+        db.session.add(AuditLog(
+            user_id=user.id, action='admin_password_recovered_via_cli',
+            resource_type='authentication',
+        ))
+        db.session.commit()
+        click.echo('Administrator password recovered; outstanding reset links revoked.')
     
     return app
 
