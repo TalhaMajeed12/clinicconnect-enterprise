@@ -107,6 +107,21 @@
         control.disabled = disabled;
     };
 
+    const readApiResponse = async (response, fallbackMessage) => {
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.toLowerCase().includes('application/json')) {
+            throw new Error(fallbackMessage);
+        }
+        let data;
+        try {
+            data = await response.json();
+        } catch (_error) {
+            throw new Error(fallbackMessage);
+        }
+        if (!response.ok) throw new Error(data.error || fallbackMessage);
+        return data;
+    };
+
     const populateSlots = selectedDoctor => {
         resetSelect(
             slot,
@@ -122,8 +137,10 @@
         if (specialty.value) query.set('specialty', specialty.value);
         try {
             const response = await fetch(`/appointments/discovery?${query}`);
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Unable to check availability');
+            const data = await readApiResponse(
+                response,
+                'Availability is temporarily unavailable. Please try again shortly.'
+            );
             if (!specialty.options.length || specialty.options.length === 1) {
                 data.specialties.forEach(value => specialty.add(new Option(value, value)));
             }
@@ -144,7 +161,11 @@
             bookingStatus.textContent = doctors.length
                 ? 'The best-rated available doctor is selected first. You can choose another doctor or time.'
                 : 'No matching doctor is available from this date. Try another specialty or date.';
-        } catch (error) { bookingStatus.textContent = error.message; }
+        } catch (error) {
+            resetSelect(doctor, 'Doctors are temporarily unavailable');
+            populateSlots(null);
+            bookingStatus.textContent = error.message;
+        }
     };
 
     specialty.addEventListener('change', loadDiscovery);
@@ -171,8 +192,10 @@
                     reason: document.getElementById('guided-reason').value,
                 }),
             });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Unable to submit request');
+            const data = await readApiResponse(
+                response,
+                'The request could not be sent right now. Please try again shortly.'
+            );
             bookingStatus.textContent = `${data.message} Clinic phone: ${data.clinic_phone}`;
             addMessage(`${data.message}\nClinic phone: ${data.clinic_phone}`, 'assistant');
             bookingForm.querySelectorAll('input, select, textarea, button').forEach(control => control.disabled = true);

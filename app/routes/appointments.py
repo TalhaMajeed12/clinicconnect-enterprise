@@ -37,13 +37,11 @@ def _directory_clinicians(specialty=None):
     ).all()
 
 
-def _next_slots(clinician, start_date, days=14, limit=5):
+def _next_slots(clinician, start_date, days=14):
     result = []
     for offset in range(days):
         for slot in available_slots(clinician, start_date + timedelta(days=offset)):
             result.append(slot)
-            if len(result) >= limit:
-                return result
     return result
 
 @appointments_bp.route('/book', methods=['GET', 'POST'])
